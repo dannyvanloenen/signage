@@ -108,6 +108,44 @@ pnpm build
 
 ---
 
+## Deployen naar VPS (Ubuntu 22.04)
+
+### Eenmalige setup
+
+SSH in op je VPS en voer uit:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/dannyvanloenen/signage/master/scripts/setup-vps.sh \
+  | bash -s -- <VPS_IP>
+```
+
+Vervang `<VPS_IP>` door het IP-adres van je server (bijv. `1.2.3.4`).
+
+Het script installeert automatisch: Node.js 22, pnpm, PM2, Docker, Nginx, de app zelf, en voert migraties + seed uit.
+
+Na afloop:
+
+| URL | Wat |
+|-----|-----|
+| `http://<VPS_IP>` | Display scherm |
+| `http://<VPS_IP>:3001` | Admin dashboard |
+| `http://<VPS_IP>:3000` | API |
+
+### Updaten na een nieuwe push
+
+```bash
+ssh gebruiker@<VPS_IP> "bash /var/www/signage/scripts/deploy.sh"
+```
+
+### HTTPS toevoegen (later, als je een domeinnaam hebt)
+
+```bash
+sudo apt install certbot python3-certbot-nginx
+sudo certbot --nginx -d jouwdomein.nl
+```
+
+---
+
 ## Projectstructuur
 
 ```
