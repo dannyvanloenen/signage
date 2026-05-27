@@ -1,0 +1,74 @@
+export const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000';
+
+async function req<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = localStorage.getItem('jwt');
+  const isForm = init?.body instanceof FormData;
+  const res = await fetch(`${API_URL}${path}`, {
+    ...init,
+    headers: {
+      ...(isForm ? {} : { 'Content-Type': 'application/json' }),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init?.headers,
+    },
+  });
+  if (res.status === 204) return undefined as T;
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error ?? res.statusText);
+  }
+  return res.json() as Promise<T>;
+}
+
+export type Category = { id: string; tenant_id: string; name: string; sort_order: number };
+export type MenuItem = {
+  id: string; category_id: string; tenant_id: string;
+  name: string; description: string | null;
+  price_cents: number; image_path: string | null; image_url: string | null;
+  is_available: boolean; sort_order: number;
+};
+export type Tenant = { id: string; name: string; slug: string; public_token: string; bg_image_path: string | null; ticker_text: string | null };
+export type User = { id: string; email: string; tenant_id: string | null; role: string };
+
+export type CreateItemInput = {
+  category_id: string; name: string; description?: string | null;
+  price_cents: number; image_path?: string | null;
+  is_available?: boolean; sort_order?: number;
+};
+
+export const api = {
+  magicLink: (email: string) =>
+    req<{ message: string }>('/auth/magic-link', { method: 'POST', body: JSON.stringify({ email }) }),
+  verifyToken: (token: string) =>
+    req<{ token: string }>(`/auth/verify/${token}`),
+  me: () =>
+    req<{ user: User; tenant: Tenant | null }>('/me'),
+
+  getCategories: () => req<Category[]>('/categories'),
+  createCategory: (name: string) =>
+    req<Category>('/categories', { method: 'POST', body: JSON.stringify({ name }) }),
+  updateCategory: (id: string, data: Partial<{ name: string; sort_order: number }>) =>
+    req<Category>(`/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteCategory: (id: string) => req<void>(`/categories/${id}`, { method: 'DELETE' }),
+  reorderCategories: (items: { id: string; sort_order: number }[]) =>
+    req<{ ok: boolean }>('/categories/reorder', { method: 'PATCH', body: JSON.stringify(items) }),
+
+  getItems: () => req<MenuItem[]>('/items'),
+  createItem: (data: CreateItemInput) =>
+    req<MenuItem>('/items', { method: 'POST', body: JSON.stringify(data) }),
+  updateItem: (id: string, data: Partial<CreateItemInput>) =>
+    req<MenuItem>(`/items/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  toggleAvailability: (id: string, is_available: boolean) =>
+    req<MenuItem>(`/items/${id}/availability`, { method: 'PATCH', body: JSON.stringify({ is_available }) }),
+  deleteItem: (id: string) => req<void>(`/items/${id}`, { method: 'DELETE' }),
+  reorderItems: (items: { id: string; sort_order: number }[]) =>
+    req<{ ok: boolean }>('/items/reorder', { method: 'PATCH', body: JSON.stringify(items) }),
+
+  patch: <T>(path: string, body: unknown) =>
+    req<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),
+
+  uploadImage: (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return req<{ id: string; path: string; url: string }>('/uploads', { method: 'POST', body: form });
+  },
+};
