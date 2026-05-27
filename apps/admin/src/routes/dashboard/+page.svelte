@@ -94,6 +94,10 @@
   let newCatId = '';
   let fName = '', fDesc = '', fPrice = '0,00', fAvail = true, fImg = '';
   let uploading = false, saving = false;
+  let photoTab: 'upload' | 'library' = 'upload';
+  let libraryImages: { filename: string; label: string; url: string }[] = [];
+  let libraryLoading = false;
+  let selectedLibraryFile = '';
 
   onMount(() => {
     tickerDraft = $auth.tenant?.ticker_text ?? '';
@@ -159,6 +163,7 @@
   function openNew(catId: string) {
     isNew = true; newCatId = catId;
     fName = ''; fDesc = ''; fPrice = '0,00'; fAvail = true; fImg = '';
+    photoTab = 'upload'; selectedLibraryFile = '';
     modal = {} as MenuItem;
   }
 
@@ -170,7 +175,30 @@
     fPrice = (item.price_cents / 100).toFixed(2).replace('.', ',');
     fAvail = item.is_available;
     fImg = item.image_path ?? '';
+    photoTab = 'upload'; selectedLibraryFile = '';
     modal = item;
+  }
+
+  async function loadLibrary() {
+    if (libraryImages.length > 0) return;
+    libraryLoading = true;
+    try { libraryImages = await api.getLibrary(); }
+    catch { /* stil falen is ok */ }
+    finally { libraryLoading = false; }
+  }
+
+  async function pickLibraryImage(filename: string) {
+    uploading = true;
+    selectedLibraryFile = filename;
+    try {
+      const r = await api.selectLibraryImage(filename);
+      fImg = r.path;
+    } catch (ex: unknown) {
+      selectedLibraryFile = '';
+      alert((ex as Error).message);
+    } finally {
+      uploading = false;
+    }
   }
 
   async function toggleAvail(item: MenuItem) {
@@ -388,14 +416,43 @@
         <span>Beschikbaar</span>
       </label>
 
-      <label>
-        Foto
-        {#if fImg}
-          <img src="{API_URL}/uploads/{fImg}-400w.webp" alt="preview" class="thumb" />
-        {/if}
-        <input type="file" accept="image/*" capture="environment" on:change={uploadPhoto} disabled={uploading} />
-        {#if uploading}<span class="hint">Uploaden…</span>{/if}
-      </label>
+      <div class="photo-label">Foto</div>
+      <div class="photo-tabs">
+        <button class="ptab" class:active={photoTab === 'upload'} on:click={() => photoTab = 'upload'}>Uploaden</button>
+        <button class="ptab" class:active={photoTab === 'library'} on:click={() => { photoTab = 'library'; loadLibrary(); }}>Bibliotheek</button>
+      </div>
+
+      {#if photoTab === 'upload'}
+        <div class="upload-area">
+          {#if fImg}
+            <img src="{API_URL}/uploads/{fImg}-400w.webp" alt="preview" class="thumb" />
+          {/if}
+          <input type="file" accept="image/*" on:change={uploadPhoto} disabled={uploading} />
+          {#if uploading}<span class="hint">Uploaden…</span>{/if}
+        </div>
+      {:else}
+        <div class="lib-wrap">
+          {#if libraryLoading}
+            <span class="hint">Laden…</span>
+          {:else if libraryImages.length === 0}
+            <p class="hint">Nog geen afbeeldingen.<br>Zet bestanden in <code>apps/api/assets/library/</code></p>
+          {:else}
+            <div class="lib-grid">
+              {#each libraryImages as img}
+                <button
+                  class="lib-item"
+                  class:selected={selectedLibraryFile === img.filename}
+                  on:click={() => pickLibraryImage(img.filename)}
+                  disabled={uploading}
+                >
+                  <img src="{API_URL}{img.url}" alt={img.label} />
+                  <span>{img.label}</span>
+                </button>
+              {/each}
+            </div>
+          {/if}
+        </div>
+      {/if}
 
       <div class="modal-footer">
         {#if !isNew}
@@ -545,6 +602,31 @@
   input[type="file"] { color: #94a3b8; font-size: .8rem; }
   .thumb { width: 80px; height: 80px; object-fit: cover; border-radius: 6px; }
   .hint { font-size: .8rem; color: #64748b; }
+
+  .photo-label { font-size: .8rem; color: #94a3b8; margin-bottom: .3rem; }
+  .photo-tabs { display: flex; gap: .375rem; margin-bottom: .5rem; }
+  .ptab {
+    background: #0f172a; border: 1px solid #334155; color: #64748b;
+    border-radius: 6px; padding: .3rem .75rem; font-size: .78rem; cursor: pointer;
+  }
+  .ptab.active { border-color: #6366f1; color: #6366f1; background: rgba(99,102,241,.08); }
+  .upload-area { display: flex; flex-direction: column; gap: .4rem; }
+  .lib-wrap { max-height: 220px; overflow-y: auto; }
+  .lib-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: .5rem;
+  }
+  .lib-item {
+    background: #0f172a; border: 2px solid #1e293b; border-radius: 8px;
+    cursor: pointer; padding: .3rem; display: flex; flex-direction: column;
+    align-items: center; gap: .25rem; transition: border-color .15s;
+  }
+  .lib-item img { width: 64px; height: 64px; object-fit: cover; border-radius: 4px; }
+  .lib-item span { font-size: .65rem; color: #94a3b8; text-align: center; line-height: 1.2; }
+  .lib-item:hover { border-color: #6366f1; }
+  .lib-item.selected { border-color: #22c55e; }
+  .lib-item:disabled { opacity: .5; cursor: not-allowed; }
 
   .modal-footer {
     display: flex; gap: .5rem; justify-content: flex-end;
