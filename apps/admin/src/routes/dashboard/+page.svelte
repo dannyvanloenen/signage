@@ -44,7 +44,6 @@
 
   let tickerDraft = '';
   let tickerSaving = false;
-  $: { tickerDraft = $auth.tenant?.ticker_text ?? ''; }
 
   async function saveTicker() {
     tickerSaving = true;
@@ -72,7 +71,10 @@
   let fName = '', fDesc = '', fPrice = '0,00', fAvail = true, fImg = '';
   let uploading = false, saving = false;
 
-  onMount(load);
+  onMount(() => {
+    tickerDraft = $auth.tenant?.ticker_text ?? '';
+    return load();
+  });
 
   async function load() {
     busy = true;
