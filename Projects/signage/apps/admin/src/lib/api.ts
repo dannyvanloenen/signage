@@ -72,6 +72,14 @@ export const api = {
     return req<{ id: string; path: string; url: string }>('/uploads', { method: 'POST', body: form });
   },
 
+  getLibrary: () =>
+    req<{ filename: string; label: string; url: string }[]>('/library'),
+  selectLibraryImage: (filename: string) =>
+    req<{ id: string; path: string; url: string }>('/library/select', {
+      method: 'POST',
+      body: JSON.stringify({ filename }),
+    }),
+
   uploadVideo: (file: File) => {
     const form = new FormData();
     form.append('file', file);

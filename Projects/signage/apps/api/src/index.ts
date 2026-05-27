@@ -18,6 +18,7 @@ import itemsRoutes from './routes/items.js';
 import uploadsRoutes from './routes/uploads.js';
 import displayRoutes from './routes/display.js';
 import meRoutes from './routes/me.js';
+import libraryRoutes from './routes/library.js';
 
 declare module '@fastify/jwt' {
   interface FastifyJWT {
@@ -35,6 +36,11 @@ await app.register(staticPlugin, {
   root: resolve(config.UPLOAD_DIR),
   prefix: '/uploads/',
 });
+await app.register(staticPlugin, {
+  root: resolve('./assets/library'),
+  prefix: '/library/',
+  decorateReply: false,
+});
 
 await app.register(authRoutes, { prefix: '/auth' });
 await app.register(tenantsRoutes, { prefix: '/tenants' });
@@ -43,6 +49,7 @@ await app.register(itemsRoutes, { prefix: '/items' });
 await app.register(uploadsRoutes, { prefix: '/uploads' });
 await app.register(displayRoutes, { prefix: '/display' });
 await app.register(meRoutes, { prefix: '/me' });
+await app.register(libraryRoutes, { prefix: '/library' });
 
 app.get('/health', async () => {
   await db.execute(sql`SELECT 1`);
