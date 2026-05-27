@@ -6,6 +6,7 @@ import { users, tenants } from '../db/schema.js';
 import { requireAuth } from '../lib/auth.js';
 
 const bgBody = z.object({ bg_image_path: z.string().max(500).nullable() });
+const videoBody = z.object({ bg_video_path: z.string().max(500).nullable() });
 const tickerBody = z.object({ ticker_text: z.string().max(500).nullable() });
 
 const meRoutes: FastifyPluginAsync = async (app) => {
@@ -32,6 +33,22 @@ const meRoutes: FastifyPluginAsync = async (app) => {
     const [tenant] = await db
       .update(tenants)
       .set({ bg_image_path: parsed.data.bg_image_path })
+      .where(eq(tenants.id, tenantId))
+      .returning();
+
+    return tenant;
+  });
+
+  app.patch('/video', { preHandler: requireAuth }, async (request, reply) => {
+    const { tenantId } = request.user;
+    if (!tenantId) return reply.status(403).send({ error: 'Geen tenant gekoppeld' });
+
+    const parsed = videoBody.safeParse(request.body);
+    if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
+
+    const [tenant] = await db
+      .update(tenants)
+      .set({ bg_video_path: parsed.data.bg_video_path })
       .where(eq(tenants.id, tenantId))
       .returning();
 

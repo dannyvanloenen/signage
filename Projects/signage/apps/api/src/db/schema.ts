@@ -6,6 +6,7 @@ export const tenants = pgTable('tenants', {
   slug: varchar('slug', { length: 100 }).notNull().unique(),
   public_token: varchar('public_token', { length: 64 }).notNull().unique(),
   bg_image_path: varchar('bg_image_path', { length: 500 }),
+  bg_video_path: varchar('bg_video_path', { length: 500 }),
   ticker_text: text('ticker_text'),
   created_at: timestamp('created_at').notNull().defaultNow(),
 });

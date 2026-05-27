@@ -54,6 +54,30 @@ export function render(data: MenuData, page = 0, totalPages = 1): void {
     document.body.insertBefore(el, document.body.firstChild);
   }
 
+  // Video background (created once, src updated as needed)
+  let vid = document.getElementById('bg-video') as HTMLVideoElement | null;
+  if (data.tenant.bg_video_url) {
+    const src = API_URL + data.tenant.bg_video_url;
+    if (!vid) {
+      vid = document.createElement('video');
+      vid.id = 'bg-video';
+      vid.autoplay = true;
+      vid.loop = true;
+      vid.muted = true;
+      vid.playsInline = true;
+      document.body.insertBefore(vid, document.body.firstChild);
+    }
+    if (vid.dataset.src !== src) {
+      vid.dataset.src = src;
+      vid.src = src;
+      vid.load();
+    }
+    document.body.classList.add('has-video');
+  } else {
+    if (vid) { vid.remove(); }
+    document.body.classList.remove('has-video');
+  }
+
   const catHtml = data.categories.map(renderCategory).filter(Boolean).join('');
 
   const dots = totalPages > 1

@@ -26,7 +26,7 @@ export type MenuItem = {
   price_cents: number; image_path: string | null; image_url: string | null;
   is_available: boolean; sort_order: number;
 };
-export type Tenant = { id: string; name: string; slug: string; public_token: string; bg_image_path: string | null; ticker_text: string | null };
+export type Tenant = { id: string; name: string; slug: string; public_token: string; bg_image_path: string | null; bg_video_path: string | null; ticker_text: string | null };
 export type User = { id: string; email: string; tenant_id: string | null; role: string };
 
 export type CreateItemInput = {
@@ -70,5 +70,11 @@ export const api = {
     const form = new FormData();
     form.append('file', file);
     return req<{ id: string; path: string; url: string }>('/uploads', { method: 'POST', body: form });
+  },
+
+  uploadVideo: (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return req<{ id: string; path: string; url: string }>('/uploads/video', { method: 'POST', body: form });
   },
 };

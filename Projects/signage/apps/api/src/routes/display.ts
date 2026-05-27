@@ -26,6 +26,7 @@ const displayRoutes: FastifyPluginAsync = async (app) => {
         id: tenant.id,
         name: tenant.name,
         bg_image_url: tenant.bg_image_path ? `/uploads/${tenant.bg_image_path}-1600w.webp` : null,
+        bg_video_url: tenant.bg_video_path ? `/uploads/${tenant.bg_video_path}` : null,
         ticker_text: tenant.ticker_text ?? null,
       },
       categories: cats.map((c) => ({
