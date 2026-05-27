@@ -16,9 +16,11 @@
   ] as const;
   let selectedTheme: string = 'dark';
   let bgUploading = false;
+  let videoUploading = false;
 
   $: previewUrl = tenant ? `${DISPLAY_URL}/?token=${tenant.public_token}&theme=${selectedTheme}` : '#';
   $: bgUrl = $auth.tenant?.bg_image_path ? `${API_URL}/uploads/${$auth.tenant.bg_image_path}-400w.webp` : null;
+  $: videoSet = !!$auth.tenant?.bg_video_path;
 
   async function uploadBackground(e: Event) {
     const file = (e.target as HTMLInputElement).files?.[0];
@@ -40,6 +42,28 @@
     if (!confirm('Achtergrond verwijderen?')) return;
     await api.patch<unknown>('/me/background', { bg_image_path: null });
     auth.update(s => s.tenant ? { ...s, tenant: { ...s.tenant, bg_image_path: null } } : s);
+  }
+
+  async function uploadVideo(e: Event) {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    videoUploading = true;
+    try {
+      const { path } = await api.uploadVideo(file);
+      await api.patch<unknown>('/me/video', { bg_video_path: path });
+      auth.update(s => s.tenant ? { ...s, tenant: { ...s.tenant, bg_video_path: path } } : s);
+    } catch (ex: unknown) {
+      alert((ex as Error).message);
+    } finally {
+      videoUploading = false;
+      (e.target as HTMLInputElement).value = '';
+    }
+  }
+
+  async function removeVideo() {
+    if (!confirm('Video verwijderen?')) return;
+    await api.patch<unknown>('/me/video', { bg_video_path: null });
+    auth.update(s => s.tenant ? { ...s, tenant: { ...s.tenant, bg_video_path: null } } : s);
   }
 
   let tickerDraft = '';
@@ -251,6 +275,13 @@
         </label>
         {#if bgUrl}
           <button class="btn-ghost" on:click={removeBackground} title="Achtergrond verwijderen">✕ Achtergrond</button>
+        {/if}
+        <label class="btn-ghost bg-btn" title={videoUploading ? 'Uploaden…' : 'Video achtergrond instellen'}>
+          {videoUploading ? '⏳' : videoSet ? '🎬 Video ✓' : '🎬 Video'}
+          <input type="file" accept="video/mp4,video/webm" on:change={uploadVideo} disabled={videoUploading} hidden />
+        </label>
+        {#if videoSet}
+          <button class="btn-ghost" on:click={removeVideo} title="Video verwijderen">✕ Video</button>
         {/if}
         <select bind:value={selectedTheme} class="theme-select" title="Thema kiezen">
           {#each THEMES as t}

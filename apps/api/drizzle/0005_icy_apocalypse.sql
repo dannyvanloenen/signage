@@ -1,0 +1,1 @@
+ALTER TABLE "tenants" ADD COLUMN "bg_video_path" varchar(500);
