@@ -1,0 +1,26 @@
+{
+  "name": "@signage/admin",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+  },
+  "dependencies": {
+    "svelte-dnd-action": "^0.9.69",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@signage/shared": "workspace:*",
+    "@sveltejs/adapter-node": "^5.2.0",
+    "@sveltejs/kit": "^2.5.18",
+    "@sveltejs/vite-plugin-svelte": "^3.1.1",
+    "svelte": "^4.2.18",
+    "svelte-check": "^3.8.4",
+    "typescript": "^5.5.0",
+    "vite": "^5.4.2"
+  }
+}

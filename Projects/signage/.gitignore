@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+*.env.local
+.svelte-kit/
+uploads/
+*.tsbuildinfo
+apps/*/.env
