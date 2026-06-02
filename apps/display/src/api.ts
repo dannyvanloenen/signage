@@ -14,6 +14,8 @@ export type DisplayCategory = {
   id: string;
   name: string;
   sort_order: number;
+  /** Fontschaal in procenten (100 = standaard). */
+  text_scale: number;
   items: DisplayItem[];
 };
 

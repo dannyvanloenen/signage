@@ -26,13 +26,28 @@ function renderItem(item: MenuData['categories'][0]['items'][0]): string {
 function renderCategory(cat: MenuData['categories'][0]): string {
   const available = cat.items.filter(i => i.is_available);
   if (available.length === 0) return '';
+  const scale = (cat.text_scale ?? 100) / 100;
+  const style = scale !== 1 ? ` style="--cat-scale:${scale}"` : '';
   return `
-    <section class="category">
+    <section class="category"${style}>
       <h2 class="cat-name">${esc(cat.name)}</h2>
       <ul class="items">
         ${available.map(renderItem).join('')}
       </ul>
     </section>`;
+}
+
+type Layout = 'grid' | 'center';
+
+/**
+ * Bepaalt de uitlijning. Expliciet via ?layout=grid|center|split,
+ * anders automatisch: 'center' (midden vrij) zodra er video draait.
+ */
+function getLayout(hasVideo: boolean): Layout {
+  const raw = new URLSearchParams(location.search).get('layout');
+  if (raw === 'center' || raw === 'split') return 'center';
+  if (raw === 'grid') return 'grid';
+  return hasVideo ? 'center' : 'grid';
 }
 
 export function render(data: MenuData, page = 0, totalPages = 1): void {
@@ -78,7 +93,23 @@ export function render(data: MenuData, page = 0, totalPages = 1): void {
     document.body.classList.remove('has-video');
   }
 
-  const catHtml = data.categories.map(renderCategory).filter(Boolean).join('');
+  const catBlocks = data.categories.map(renderCategory).filter(Boolean);
+  const layout = getLayout(!!data.tenant.bg_video_url);
+
+  let gridInner: string;
+  let gridAttrs: string;
+  if (layout === 'center' && catBlocks.length >= 2) {
+    // Verdeel categorieën over een linker- en rechterkolom; de middenkolom
+    // blijft leeg zodat de video-achtergrond daar doorheen komt.
+    const mid = Math.ceil(catBlocks.length / 2);
+    const left = catBlocks.slice(0, mid).join('');
+    const right = catBlocks.slice(mid).join('');
+    gridInner = `<div class="board-col">${left}</div><div class="board-col">${right}</div>`;
+    gridAttrs = 'data-layout="center"';
+  } else {
+    gridInner = catBlocks.join('') || '<p class="empty">Geen items beschikbaar</p>';
+    gridAttrs = `data-layout="grid" style="--cols:${Math.max(1, catBlocks.length)}"`;
+  }
 
   const dots = totalPages > 1
     ? `<div class="page-dots">${Array.from({ length: totalPages }, (_, i) =>
@@ -94,8 +125,8 @@ export function render(data: MenuData, page = 0, totalPages = 1): void {
       <h1 class="board-title">${esc(data.tenant.name)}</h1>
       <div class="header-right">${dots}<span id="connection-status" class="conn-dot" data-state="online"></span></div>
     </header>
-    <main class="board-grid${ticker ? ' has-ticker' : ''}">
-      ${catHtml || '<p class="empty">Geen items beschikbaar</p>'}
+    <main class="board-grid${ticker ? ' has-ticker' : ''}" ${gridAttrs}>
+      ${gridInner}
     </main>
     ${ticker}`;
 }

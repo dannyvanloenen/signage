@@ -18,7 +18,19 @@
   let bgUploading = false;
   let videoUploading = false;
 
-  $: previewUrl = tenant ? `${DISPLAY_URL}/?token=${tenant.public_token}&theme=${selectedTheme}` : '#';
+  const FONTS = [
+    { value: 'default',   label: 'Aa Standaard' },
+    { value: 'serif',     label: 'Aa Serif' },
+    { value: 'rounded',   label: 'Aa Rond' },
+    { value: 'condensed', label: 'Aa Smal' },
+    { value: 'mono',      label: 'Aa Mono' },
+    { value: 'display',   label: 'Aa Display' },
+  ] as const;
+  let selectedFont: string = 'default';
+
+  $: previewUrl = tenant
+    ? `${DISPLAY_URL}/?token=${tenant.public_token}&theme=${selectedTheme}${selectedFont !== 'default' ? `&font=${selectedFont}` : ''}`
+    : '#';
   $: bgUrl = $auth.tenant?.bg_image_path ? `${API_URL}/uploads/${$auth.tenant.bg_image_path}-400w.webp` : null;
   $: videoSet = !!$auth.tenant?.bg_video_path;
 
@@ -157,6 +169,15 @@
     if (!confirm('Categorie en alle items verwijderen?')) return;
     await api.deleteCategory(id);
     cats = cats.filter(c => c.id !== id);
+  }
+
+  // Wisselt de fontschaal van een categorie: 100% → 125% → 150% → 100%.
+  const SCALE_STEPS = [100, 125, 150];
+  async function cycleScale(c: CatWithItems) {
+    const idx = SCALE_STEPS.indexOf(c.text_scale ?? 100);
+    const next = SCALE_STEPS[(idx + 1) % SCALE_STEPS.length];
+    cats = cats.map(x => x.id === c.id ? { ...x, text_scale: next } : x);
+    await api.updateCategory(c.id, { text_scale: next }).catch(() => {});
   }
 
   // ── Item ops ─────────────────────────────────────────────────────────────────
@@ -316,6 +337,11 @@
             <option value={t.value}>{t.label}</option>
           {/each}
         </select>
+        <select bind:value={selectedFont} class="theme-select" title="Lettertype kiezen">
+          {#each FONTS as f}
+            <option value={f.value}>{f.label}</option>
+          {/each}
+        </select>
         <a href={previewUrl} target="_blank" class="btn-ghost">👁 Preview</a>
       {/if}
       <button class="btn-ghost" on:click={logout}>Uitloggen</button>
@@ -357,6 +383,13 @@
           <div class="cat-header">
             <span class="handle" title="Slepen">⠿</span>
             <button class="cat-name" on:click={() => renameCat(cat)}>{cat.name}</button>
+            <button
+              class="icon-btn scale"
+              on:click={() => cycleScale(cat)}
+              title="Fontgrootte op het scherm ({cat.text_scale ?? 100}%) – klik om te wisselen"
+            >
+              {(cat.text_scale ?? 100) === 100 ? 'A' : `A·${cat.text_scale}%`}
+            </button>
             <button class="icon-btn del" on:click={() => delCat(cat.id)} title="Verwijder">✕</button>
           </div>
 
@@ -543,6 +576,8 @@
   .icon-btn { background: none; border: none; cursor: pointer; font-size: .9rem; padding: .25rem .375rem; border-radius: 4px; }
   .del { color: #64748b; }
   .del:hover { color: #f87171; background: #1e1a2e; }
+  .scale { color: #64748b; font-weight: 700; min-width: 1.5rem; }
+  .scale:hover { color: #818cf8; background: #1e1a2e; }
 
   .items { display: flex; flex-direction: column; min-height: 4px; }
   .item-row {

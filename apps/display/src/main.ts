@@ -10,6 +10,9 @@ const PAGE_INTERVAL = 8000;
 const VALID_THEMES = ['dark', 'warm', 'cool', 'minimal'] as const;
 type Theme = typeof VALID_THEMES[number];
 
+const VALID_FONTS = ['default', 'serif', 'rounded', 'condensed', 'mono', 'display'] as const;
+type Font = typeof VALID_FONTS[number];
+
 let currentMenu: MenuData | null = null;
 let pageIndex = 0;
 let pageTimer: ReturnType<typeof setInterval> | undefined;
@@ -23,6 +26,12 @@ function applyTheme(): void {
   const raw = new URLSearchParams(location.search).get('theme') ?? 'dark';
   const theme: Theme = (VALID_THEMES as readonly string[]).includes(raw) ? raw as Theme : 'dark';
   if (theme !== 'dark') document.documentElement.dataset.theme = theme;
+}
+
+function applyFont(): void {
+  const raw = new URLSearchParams(location.search).get('font') ?? 'default';
+  const font: Font = (VALID_FONTS as readonly string[]).includes(raw) ? raw as Font : 'default';
+  if (font !== 'default') document.documentElement.dataset.font = font;
 }
 
 function activeCategories(data: MenuData) {
@@ -99,6 +108,7 @@ function init(): void {
     return;
   }
   applyTheme();
+  applyFont();
   renderLoading();
   loadAndRender(token);
   connectDisplay(token, () => loadAndRender(token));

@@ -33,6 +33,7 @@ const displayRoutes: FastifyPluginAsync = async (app) => {
         id: c.id,
         name: c.name,
         sort_order: c.sort_order,
+        text_scale: c.text_scale,
         items: items
           .filter((i) => i.category_id === c.id)
           .map((i) => ({

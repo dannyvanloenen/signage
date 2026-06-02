@@ -19,7 +19,7 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export type Category = { id: string; tenant_id: string; name: string; sort_order: number };
+export type Category = { id: string; tenant_id: string; name: string; sort_order: number; text_scale: number };
 export type MenuItem = {
   id: string; category_id: string; tenant_id: string;
   name: string; description: string | null;
@@ -46,7 +46,7 @@ export const api = {
   getCategories: () => req<Category[]>('/categories'),
   createCategory: (name: string) =>
     req<Category>('/categories', { method: 'POST', body: JSON.stringify({ name }) }),
-  updateCategory: (id: string, data: Partial<{ name: string; sort_order: number }>) =>
+  updateCategory: (id: string, data: Partial<{ name: string; sort_order: number; text_scale: number }>) =>
     req<Category>(`/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteCategory: (id: string) => req<void>(`/categories/${id}`, { method: 'DELETE' }),
   reorderCategories: (items: { id: string; sort_order: number }[]) =>

@@ -31,6 +31,7 @@ export const categories = pgTable('categories', {
   tenant_id: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 255 }).notNull(),
   sort_order: integer('sort_order').notNull().default(0),
+  text_scale: integer('text_scale').notNull().default(100),
 });
 
 export const menu_items = pgTable('menu_items', {

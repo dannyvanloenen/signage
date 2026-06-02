@@ -9,6 +9,7 @@ import { publishMenuUpdate } from '../lib/events.js';
 const createBody = z.object({
   name: z.string().min(1).max(255),
   sort_order: z.number().int().min(0).default(0),
+  text_scale: z.number().int().min(100).max(200).default(100),
 });
 
 const updateBody = createBody.partial();

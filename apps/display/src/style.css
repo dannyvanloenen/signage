@@ -11,8 +11,16 @@
   --accent:     #f59e0b;
   --accent-dim: rgba(245,158,11,.12);
   --radius:     .5rem;
+  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
   font-size: clamp(12px, 1.2vw, 16px);
 }
+
+/* ── Lettertypes (via ?font= in de URL) ── */
+[data-font="serif"]     { --font: 'Georgia', 'Times New Roman', serif; }
+[data-font="rounded"]   { --font: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif; }
+[data-font="condensed"] { --font: 'Arial Narrow', 'Roboto Condensed', system-ui, sans-serif; }
+[data-font="mono"]      { --font: 'Consolas', 'SF Mono', ui-monospace, monospace; }
+[data-font="display"]   { --font: 'Impact', 'Haettenschweiler', 'Segoe UI', sans-serif; }
 
 /* ── Theme: warm (amber/bruin) ── */
 [data-theme="warm"] {
@@ -51,7 +59,7 @@
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-family: var(--font);
   height: 100vh;
   overflow: hidden;
 }
@@ -134,13 +142,36 @@ body.has-bg::after { opacity: 1; }
 .board-grid {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: 1rem;
   overflow: hidden;
-  align-content: start;
 }
 
+/* Standaard: gelijke kolommen over de volle breedte, kaarten rekken uit
+   tot de volle hoogte i.p.v. linksboven te plakken. */
+.board-grid[data-layout="grid"] {
+  grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+  align-content: stretch;
+}
+
+/* Center-stage: linker- en rechterkolom met het midden vrij voor de video. */
+.board-grid[data-layout="center"] {
+  grid-template-columns: minmax(0, 1fr) minmax(14%, .8fr) minmax(0, 1fr);
+  align-content: stretch;
+}
+.board-grid[data-layout="center"] .board-col:first-child { grid-column: 1; }
+.board-grid[data-layout="center"] .board-col:last-child  { grid-column: 3; }
+
+.board-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 0;
+}
+.board-col > .category { flex: 1 1 0; }
+
 .category {
+  --cat-scale: 1;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -149,9 +180,19 @@ body.has-bg::after { opacity: 1; }
   overflow: hidden;
 }
 
+/* Glass-effect zodat de video/achtergrond subtiel doorschemert. */
+body.has-video .category,
+body.has-bg .category,
+body.has-video .board-header,
+body.has-bg .board-header {
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
 .cat-name {
   padding: .6rem 1rem;
-  font-size: 1.15rem;
+  font-size: calc(1.15rem * var(--cat-scale, 1));
   font-weight: 700;
   color: var(--accent);
   background: var(--accent-dim);
@@ -180,8 +221,8 @@ body.has-bg::after { opacity: 1; }
 .item:last-child { border-bottom: none; }
 
 .item-img {
-  width: 3.5rem;
-  height: 3.5rem;
+  width: calc(3.5rem * var(--cat-scale, 1));
+  height: calc(3.5rem * var(--cat-scale, 1));
   object-fit: cover;
   border-radius: .375rem;
   flex-shrink: 0;
@@ -193,7 +234,7 @@ body.has-bg::after { opacity: 1; }
 }
 
 .item-name {
-  font-size: .95rem;
+  font-size: calc(.95rem * var(--cat-scale, 1));
   font-weight: 600;
   display: block;
   white-space: nowrap;
@@ -202,7 +243,7 @@ body.has-bg::after { opacity: 1; }
 }
 
 .item-desc {
-  font-size: .75rem;
+  font-size: calc(.75rem * var(--cat-scale, 1));
   color: var(--muted);
   margin-top: .15rem;
   white-space: nowrap;
@@ -211,7 +252,7 @@ body.has-bg::after { opacity: 1; }
 }
 
 .item-price {
-  font-size: 1.05rem;
+  font-size: calc(1.05rem * var(--cat-scale, 1));
   font-weight: 700;
   white-space: nowrap;
   color: var(--accent);
