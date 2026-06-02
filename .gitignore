@@ -6,3 +6,7 @@ dist/
 uploads/
 *.tsbuildinfo
 apps/*/.env
+
+# Gegenereerde test-rapporten
+apps/*/tests/REPORT.md
+coverage/
