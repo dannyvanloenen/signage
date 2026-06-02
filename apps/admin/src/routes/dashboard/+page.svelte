@@ -5,6 +5,7 @@
   import { flip } from 'svelte/animate';
   import { auth } from '$lib/stores';
   import { api, API_URL, type Category, type MenuItem } from '$lib/api';
+  import { buildPreviewUrl, nextScale } from '$lib/display-link';
 
   const DISPLAY_URL = (import.meta.env.VITE_DISPLAY_URL as string | undefined) ?? 'http://localhost:4000';
 
@@ -28,9 +29,7 @@
   ] as const;
   let selectedFont: string = 'default';
 
-  $: previewUrl = tenant
-    ? `${DISPLAY_URL}/?token=${tenant.public_token}&theme=${selectedTheme}${selectedFont !== 'default' ? `&font=${selectedFont}` : ''}`
-    : '#';
+  $: previewUrl = buildPreviewUrl(DISPLAY_URL, tenant?.public_token, selectedTheme, selectedFont);
   $: bgUrl = $auth.tenant?.bg_image_path ? `${API_URL}/uploads/${$auth.tenant.bg_image_path}-400w.webp` : null;
   $: videoSet = !!$auth.tenant?.bg_video_path;
 
@@ -172,10 +171,8 @@
   }
 
   // Wisselt de fontschaal van een categorie: 100% → 125% → 150% → 100%.
-  const SCALE_STEPS = [100, 125, 150];
   async function cycleScale(c: CatWithItems) {
-    const idx = SCALE_STEPS.indexOf(c.text_scale ?? 100);
-    const next = SCALE_STEPS[(idx + 1) % SCALE_STEPS.length];
+    const next = nextScale(c.text_scale ?? 100);
     cats = cats.map(x => x.id === c.id ? { ...x, text_scale: next } : x);
     await api.updateCategory(c.id, { text_scale: next }).catch(() => {});
   }
