@@ -181,12 +181,31 @@ Na afloop:
 ssh gebruiker@<VPS_IP> "bash /var/www/signage/scripts/deploy.sh"
 ```
 
-### HTTPS toevoegen (later, als je een domeinnaam hebt)
+### HTTPS + domein toevoegen
+
+Zet eerst drie **A-records** die naar het IP van je VPS wijzen:
+
+| Hostnaam | Wat |
+|----------|-----|
+| `jouwdomein.nl` | Display scherm |
+| `admin.jouwdomein.nl` | Admin dashboard |
+| `api.jouwdomein.nl` | API |
+
+Voer daarna op de VPS uit:
 
 ```bash
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d jouwdomein.nl
+ssh gebruiker@<VPS_IP> "bash /var/www/signage/scripts/enable-https.sh jouwdomein.nl jij@voorbeeld.nl"
 ```
+
+Het script werkt de `.env`-URLs bij naar `https://`, herbouwt de frontends,
+configureert Nginx (display + `admin.` + `api.` met websocket-proxy) en vraagt
+Let's Encrypt-certificaten aan (automatische vernieuwing). Daarna:
+
+| URL | Wat |
+|-----|-----|
+| `https://jouwdomein.nl` | Display |
+| `https://admin.jouwdomein.nl` | Admin |
+| `https://api.jouwdomein.nl` | API |
 
 ---
 
