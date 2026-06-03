@@ -82,9 +82,6 @@ export const api = {
   reorderItems: (items: { id: string; sort_order: number }[]) =>
     req<{ ok: boolean }>('/items/reorder', { method: 'PATCH', body: JSON.stringify(items) }),
 
-  patch: <T>(path: string, body: unknown) =>
-    req<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),
-
   uploadImage: (file: File) => {
     const form = new FormData();
     form.append('file', file);

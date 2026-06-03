@@ -90,13 +90,55 @@ Snellere manier tijdens ontwikkeling: gebruik de login-URL die `pnpm db:seed` pr
 
 ## Display bekijken
 
-Open de URL die de seed print, of bouw hem zelf:
+Elk **scherm** heeft een eigen `public_token`. Open de URL die de seed print, of bouw hem zelf:
 
 ```
-http://localhost:4000/?token=<public_token>&theme=dark
+http://localhost:4000/?token=<public_token>
 ```
 
-Beschikbare thema's: `dark` (standaard), `warm`, `cool`, `minimal`
+Het scherm bepaalt zelf zijn thema, layout, lettertype, achtergrond/ticker en
+welke categorieën het toont (ingesteld in de admin). URL-parameters kunnen dit
+overschrijven voor een snelle preview:
+
+```
+http://localhost:4000/?token=<public_token>&theme=warm&layout=center&font=serif
+```
+
+- Thema's: `dark` (standaard), `warm`, `cool`, `minimal`
+- Layouts: `auto` (video → midden vrij, anders grid), `grid`, `center`
+- Fonts: `default`, `serif`, `rounded`, `condensed`, `mono`, `display`
+
+---
+
+## Schermen & abonnementen
+
+Een tenant kan **meerdere schermen** beheren via `Admin → Schermen`
+(`/dashboard/screens`): per scherm een eigen token, presentatie (thema/layout/
+font/achtergrond/ticker) en een selectie + volgorde van categorieën.
+
+Bestaande installaties krijgen via een eenmalige backfill automatisch één
+"Hoofdscherm" dat het oude tenant-token hergebruikt (bestaande URLs blijven dus
+werken):
+
+```bash
+cd apps/api && pnpm tsx scripts/backfill-screens.ts   # idempotent
+```
+
+**Abonnementen** (`tenants.plan`): `free` en `pro` met limieten op het aantal
+schermen, categorieën en items (zie `apps/api/src/lib/plans.ts`). Het aanmaken
+boven de limiet geeft een `403`; de admin toont het gebruik (`n/max`).
+
+---
+
+## Tests
+
+```bash
+pnpm test          # alle apps (vanuit de root)
+```
+
+Elke app heeft regressietests (Vitest) met een root-cause-rapport in
+`apps/<app>/tests/REPORT.md`. De API-tests draaien tegen de draaiende Postgres
+(`docker compose … up -d`).
 
 ---
 
@@ -153,17 +195,22 @@ apps/
   api/
     src/
       db/          – Drizzle schema + migraties
-      lib/         – Auth, e-mail, uploads
-      routes/      – Fastify route-handlers
+      lib/         – Auth, e-mail, uploads, plans (limieten)
+      routes/      – Fastify route-handlers (o.a. screens, display)
+      app.ts       – buildApp() (gedeeld door server + tests)
     scripts/
-      seed.ts      – Demodata
+      seed.ts                – Demodata
+      backfill-screens.ts    – Eenmalige migratie naar schermen
     drizzle/       – SQL-migraties
+    tests/         – Vitest integratietests (app.inject)
   admin/
     src/
-      routes/      – SvelteKit pagina's (login, verify, dashboard)
-      lib/         – API-client, stores
+      routes/      – SvelteKit pagina's (login, verify, dashboard, dashboard/screens)
+      lib/         – API-client, stores, display-link helpers
+    tests/         – Vitest (api-client + helpers)
   display/
     src/           – Vanilla TS: main, render, api, socket, style
+    tests/         – Vitest (render-logica)
 packages/
   shared/          – Gedeelde TypeScript types
 docker/
