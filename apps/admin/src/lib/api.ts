@@ -26,8 +26,17 @@ export type MenuItem = {
   price_cents: number; image_path: string | null; image_url: string | null;
   is_available: boolean; sort_order: number;
 };
-export type Tenant = { id: string; name: string; slug: string; public_token: string; bg_image_path: string | null; bg_video_path: string | null; ticker_text: string | null };
+export type Tenant = { id: string; name: string; slug: string; public_token: string; bg_image_path: string | null; bg_video_path: string | null; ticker_text: string | null; plan: string };
 export type User = { id: string; email: string; tenant_id: string | null; role: string };
+
+export type Screen = {
+  id: string; tenant_id: string; name: string; public_token: string;
+  theme: string; layout: string; font: string;
+  bg_image_path: string | null; bg_video_path: string | null;
+  ticker_text: string | null; category_ids: string[] | null; sort_order: number;
+};
+export type ScreenUpdate = Partial<Pick<Screen,
+  'name' | 'theme' | 'layout' | 'font' | 'bg_image_path' | 'bg_video_path' | 'ticker_text' | 'category_ids'>>;
 
 export type CreateItemInput = {
   category_id: string; name: string; description?: string | null;
@@ -51,6 +60,13 @@ export const api = {
   deleteCategory: (id: string) => req<void>(`/categories/${id}`, { method: 'DELETE' }),
   reorderCategories: (items: { id: string; sort_order: number }[]) =>
     req<{ ok: boolean }>('/categories/reorder', { method: 'PATCH', body: JSON.stringify(items) }),
+
+  getScreens: () => req<Screen[]>('/screens'),
+  createScreen: (name: string) =>
+    req<Screen>('/screens', { method: 'POST', body: JSON.stringify({ name }) }),
+  updateScreen: (id: string, data: ScreenUpdate) =>
+    req<Screen>(`/screens/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteScreen: (id: string) => req<void>(`/screens/${id}`, { method: 'DELETE' }),
 
   getItems: () => req<MenuItem[]>('/items'),
   createItem: (data: CreateItemInput) =>

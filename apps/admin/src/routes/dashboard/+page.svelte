@@ -340,6 +340,7 @@
           {/each}
         </select>
         <a href={previewUrl} target="_blank" class="btn-ghost">👁 Preview</a>
+        <a href="/dashboard/screens" class="btn-ghost">🖥 Schermen</a>
       {/if}
       <button class="btn-ghost" on:click={logout}>Uitloggen</button>
     </div>
