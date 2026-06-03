@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, integer, boolean, text } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, timestamp, integer, boolean, text, jsonb } from 'drizzle-orm/pg-core';
 
 export const tenants = pgTable('tenants', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -8,6 +8,26 @@ export const tenants = pgTable('tenants', {
   bg_image_path: varchar('bg_image_path', { length: 500 }),
   bg_video_path: varchar('bg_video_path', { length: 500 }),
   ticker_text: text('ticker_text'),
+  plan: varchar('plan', { length: 20 }).notNull().default('free'),
+  created_at: timestamp('created_at').notNull().defaultNow(),
+});
+
+// Een scherm = één display-view binnen een tenant: eigen token, thema/layout/
+// font, achtergrond/ticker en een selectie categorieën (category_ids; leeg/null
+// = alle categorieën van de tenant).
+export const screens = pgTable('screens', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenant_id: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 255 }).notNull(),
+  public_token: varchar('public_token', { length: 64 }).notNull().unique(),
+  theme: varchar('theme', { length: 20 }).notNull().default('dark'),
+  layout: varchar('layout', { length: 20 }).notNull().default('auto'),
+  font: varchar('font', { length: 20 }).notNull().default('default'),
+  bg_image_path: varchar('bg_image_path', { length: 500 }),
+  bg_video_path: varchar('bg_video_path', { length: 500 }),
+  ticker_text: text('ticker_text'),
+  category_ids: jsonb('category_ids').$type<string[]>(),
+  sort_order: integer('sort_order').notNull().default(0),
   created_at: timestamp('created_at').notNull().defaultNow(),
 });
 

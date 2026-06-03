@@ -50,6 +50,13 @@
       "when": 1780409912065,
       "tag": "0006_simple_ink",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1780481438955,
+      "tag": "0007_spotty_jigsaw",
+      "breakpoints": true
     }
   ]
 }
