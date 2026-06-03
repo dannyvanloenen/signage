@@ -22,14 +22,19 @@ fi
 echo "=== Nginx installeren ==="
 sudo apt-get install -y nginx
 
-echo "=== Repo clonen ==="
-sudo mkdir -p /var/www/signage
-sudo chown "$USER":"$USER" /var/www/signage
-git clone https://github.com/dannyvanloenen/signage.git /var/www/signage
-cd /var/www/signage
+echo "=== Repo clonen of bijwerken ==="
+if [ -d /var/www/signage/.git ]; then
+  cd /var/www/signage && git pull
+else
+  sudo mkdir -p /var/www/signage
+  sudo chown "$USER":"$USER" /var/www/signage
+  git clone https://github.com/dannyvanloenen/signage.git /var/www/signage
+  cd /var/www/signage
+fi
 
-echo "=== .env bestanden aanmaken ==="
-cat > apps/api/.env <<EOF
+echo "=== .env bestanden aanmaken (bestaande worden behouden) ==="
+if [ ! -f apps/api/.env ]; then
+  cat > apps/api/.env <<EOF
 DATABASE_URL=postgres://signage:signage@localhost:5432/signage
 REDIS_URL=redis://localhost:6379
 PORT=3000
@@ -38,15 +43,20 @@ ADMIN_URL=http://${VPS_IP}:3001
 MAGIC_LINK_SECRET=$(openssl rand -hex 32)
 UPLOAD_DIR=./uploads
 EOF
+fi
 
-cat > apps/admin/.env <<EOF
+if [ ! -f apps/admin/.env ]; then
+  cat > apps/admin/.env <<EOF
 VITE_API_URL=http://${VPS_IP}:3000
 VITE_DISPLAY_URL=http://${VPS_IP}
 EOF
+fi
 
-cat > apps/display/.env <<EOF
+if [ ! -f apps/display/.env ]; then
+  cat > apps/display/.env <<EOF
 VITE_API_URL=http://${VPS_IP}:3000
 EOF
+fi
 
 echo "=== Database + Redis starten ==="
 docker compose -f docker/docker-compose.yml up -d
@@ -57,10 +67,11 @@ echo "=== Dependencies installeren + bouwen ==="
 pnpm install
 pnpm build
 
-echo "=== Migraties + seed uitvoeren ==="
+echo "=== Migraties + seed + schermen-backfill uitvoeren ==="
 cd apps/api
 pnpm db:migrate
 pnpm db:seed
+pnpm tsx scripts/backfill-screens.ts
 cd ../..
 
 echo "=== Nginx configureren ==="
