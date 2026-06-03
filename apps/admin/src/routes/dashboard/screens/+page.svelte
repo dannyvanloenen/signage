@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { api, API_URL, type Screen, type Category } from '$lib/api';
+  import { api, type Screen, type Category, type PlanLimits } from '$lib/api';
 
   const DISPLAY_URL = (import.meta.env.VITE_DISPLAY_URL as string | undefined) ?? 'http://localhost:4000';
 
@@ -10,15 +10,23 @@
 
   let screens: Screen[] = [];
   let categories: Category[] = [];
+  let plan = 'free';
+  let limits: PlanLimits | null = null;
   let busy = true;
   let errMsg = '';
+
+  $: atScreenLimit = limits !== null && screens.length >= limits.screens;
 
   onMount(load);
 
   async function load() {
     busy = true;
     try {
-      [screens, categories] = await Promise.all([api.getScreens(), api.getCategories()]);
+      const [scr, cats, me] = await Promise.all([api.getScreens(), api.getCategories(), api.me()]);
+      screens = scr;
+      categories = cats;
+      plan = me.tenant?.plan ?? 'free';
+      limits = me.limits;
     } catch (e: unknown) {
       errMsg = (e as Error).message;
     } finally {
@@ -95,7 +103,15 @@
   <header class="top">
     <a href="/dashboard" class="back">← Menu</a>
     <h1>Schermen</h1>
-    <button class="add" on:click={addScreen}>+ Scherm</button>
+    {#if limits}
+      <span class="usage" class:full={atScreenLimit}>
+        {screens.length}/{limits.screens} · {plan === 'pro' ? 'Pro' : 'Free'}
+      </span>
+    {/if}
+    <button class="add" on:click={addScreen} disabled={atScreenLimit}
+      title={atScreenLimit ? 'Schermlimiet van je abonnement bereikt' : 'Nieuw scherm'}>
+      + Scherm
+    </button>
   </header>
 
   {#if errMsg}<p class="err">{errMsg}</p>{/if}
@@ -183,6 +199,9 @@
   .back { color: #94a3b8; text-decoration: none; }
   .back:hover { color: #e2e8f0; }
   .add { background: #4f46e5; color: #fff; border: none; padding: .5rem .9rem; border-radius: 6px; cursor: pointer; font-weight: 600; }
+  .add:disabled { opacity: .5; cursor: not-allowed; }
+  .usage { font-size: .8rem; color: #94a3b8; background: #1e293b; border: 1px solid #334155; padding: .3rem .6rem; border-radius: 999px; }
+  .usage.full { color: #fbbf24; border-color: #a16207; }
   .err { color: #f87171; }
   .muted { color: #64748b; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }

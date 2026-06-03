@@ -5,6 +5,7 @@ import { db } from '../db/index.js';
 import { categories } from '../db/schema.js';
 import { requireAuth } from '../lib/auth.js';
 import { publishMenuUpdate } from '../lib/events.js';
+import { planLimits } from '../lib/plans.js';
 
 const createBody = z.object({
   name: z.string().min(1).max(255),
@@ -31,6 +32,11 @@ const categoriesRoutes: FastifyPluginAsync = async (app) => {
     if (!tenantId) return reply.status(403).send({ error: 'Geen tenant gekoppeld' });
     const parsed = createBody.safeParse(request.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
+    const existing = await db.select({ id: categories.id }).from(categories).where(eq(categories.tenant_id, tenantId));
+    const limits = await planLimits(tenantId);
+    if (existing.length >= limits.categories) {
+      return reply.status(403).send({ error: `Je abonnement staat maximaal ${limits.categories} categorieën toe.` });
+    }
     const [category] = await db.insert(categories).values({ ...parsed.data, tenant_id: tenantId }).returning();
     void publishMenuUpdate(tenantId);
     return reply.status(201).send(category);

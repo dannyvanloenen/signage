@@ -179,6 +179,34 @@ describe('API — schermen (multi-screen)', () => {
   });
 });
 
+describe('API — plan & limieten', () => {
+  it('GET /me bevat plan-limieten en huidig gebruik', async () => {
+    const res = await app.inject({ method: 'GET', url: '/me', headers: auth() });
+    expect(res.statusCode).toBe(200);
+    const b = res.json();
+    expect(b.limits).toHaveProperty('screens');
+    expect(b.limits).toHaveProperty('categories');
+    expect(b.limits).toHaveProperty('items');
+    expect(typeof b.usage.screens).toBe('number');
+    expect(typeof b.usage.categories).toBe('number');
+    expect(typeof b.usage.items).toBe('number');
+  });
+
+  it('weigert een extra scherm boven de plan-limiet (403)', async () => {
+    const created: string[] = [];
+    let hit403 = false;
+    for (let i = 0; i < 6; i++) {
+      const res = await app.inject({ method: 'POST', url: '/screens', headers: auth(), payload: { name: TEST_SCREEN } });
+      if (res.statusCode === 201) { created.push(res.json().id); continue; }
+      expect(res.statusCode).toBe(403);
+      hit403 = true;
+      break;
+    }
+    expect(hit403).toBe(true);
+    for (const id of created) await app.inject({ method: 'DELETE', url: `/screens/${id}`, headers: auth() });
+  });
+});
+
 describe('API — auth-routes', () => {
   it('POST /auth/magic-link geeft altijd een generieke melding', async () => {
     const res = await app.inject({ method: 'POST', url: '/auth/magic-link', payload: { email: 'iemand@voorbeeld.nl' } });

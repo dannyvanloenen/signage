@@ -6,6 +6,7 @@ import { db } from '../db/index.js';
 import { screens } from '../db/schema.js';
 import { requireAuth } from '../lib/auth.js';
 import { publishMenuUpdate } from '../lib/events.js';
+import { planLimits } from '../lib/plans.js';
 
 const createBody = z.object({
   name: z.string().min(1).max(255),
@@ -38,6 +39,10 @@ const screensRoutes: FastifyPluginAsync = async (app) => {
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
 
     const existing = await db.select({ id: screens.id }).from(screens).where(eq(screens.tenant_id, tenantId));
+    const limits = await planLimits(tenantId);
+    if (existing.length >= limits.screens) {
+      return reply.status(403).send({ error: `Je abonnement staat maximaal ${limits.screens} schermen toe.` });
+    }
     const [screen] = await db.insert(screens).values({
       tenant_id: tenantId,
       name: parsed.data.name,

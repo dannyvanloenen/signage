@@ -2,8 +2,9 @@ import type { FastifyPluginAsync } from 'fastify';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../db/index.js';
-import { users, tenants } from '../db/schema.js';
+import { users, tenants, screens, categories, menu_items } from '../db/schema.js';
 import { requireAuth } from '../lib/auth.js';
+import { limitsFor } from '../lib/plans.js';
 
 const bgBody = z.object({ bg_image_path: z.string().max(500).nullable() });
 const videoBody = z.object({ bg_video_path: z.string().max(500).nullable() });
@@ -20,7 +21,17 @@ const meRoutes: FastifyPluginAsync = async (app) => {
       tenant = t ?? null;
     }
 
-    return { user, tenant };
+    if (!tenant) return { user, tenant: null, limits: null, usage: null };
+
+    const limits = limitsFor(tenant.plan);
+    const [sc, ca, it] = await Promise.all([
+      db.select({ id: screens.id }).from(screens).where(eq(screens.tenant_id, tenant.id)),
+      db.select({ id: categories.id }).from(categories).where(eq(categories.tenant_id, tenant.id)),
+      db.select({ id: menu_items.id }).from(menu_items).where(eq(menu_items.tenant_id, tenant.id)),
+    ]);
+    const usage = { screens: sc.length, categories: ca.length, items: it.length };
+
+    return { user, tenant, limits, usage };
   });
 
   app.patch('/background', { preHandler: requireAuth }, async (request, reply) => {

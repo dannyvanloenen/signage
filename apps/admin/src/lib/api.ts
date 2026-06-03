@@ -38,6 +38,9 @@ export type Screen = {
 export type ScreenUpdate = Partial<Pick<Screen,
   'name' | 'theme' | 'layout' | 'font' | 'bg_image_path' | 'bg_video_path' | 'ticker_text' | 'category_ids'>>;
 
+export type PlanLimits = { screens: number; categories: number; items: number };
+export type PlanUsage = { screens: number; categories: number; items: number };
+
 export type CreateItemInput = {
   category_id: string; name: string; description?: string | null;
   price_cents: number; image_path?: string | null;
@@ -50,7 +53,7 @@ export const api = {
   verifyToken: (token: string) =>
     req<{ token: string }>(`/auth/verify/${token}`),
   me: () =>
-    req<{ user: User; tenant: Tenant | null }>('/me'),
+    req<{ user: User; tenant: Tenant | null; limits: PlanLimits | null; usage: PlanUsage | null }>('/me'),
 
   getCategories: () => req<Category[]>('/categories'),
   createCategory: (name: string) =>
