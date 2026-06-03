@@ -1,3 +1,10 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+
+# pnpm v10+ leest deze instelling hier (niet meer uit package.json):
+# sta de build-scripts toe die we vertrouwen (anders ontbreken native binaries).
+onlyBuiltDependencies:
+  - esbuild
+  - sharp
+  - svelte-preprocess
