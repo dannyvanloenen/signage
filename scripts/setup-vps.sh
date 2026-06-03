@@ -10,7 +10,8 @@ curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs
 
 echo "=== pnpm + pm2 installeren ==="
-sudo npm install -g pnpm pm2
+# pnpm op v9 pinnen: v10+ blokkeert build-scripts (esbuild/sharp) standaard.
+sudo npm install -g pnpm@9 pm2
 
 echo "=== Docker installeren (als nog niet aanwezig) ==="
 if ! command -v docker &>/dev/null; then
