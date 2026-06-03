@@ -5,92 +5,13 @@
   import { flip } from 'svelte/animate';
   import { auth } from '$lib/stores';
   import { api, API_URL, type Category, type MenuItem } from '$lib/api';
-  import { buildPreviewUrl, nextScale } from '$lib/display-link';
+  import { nextScale } from '$lib/display-link';
 
   const DISPLAY_URL = (import.meta.env.VITE_DISPLAY_URL as string | undefined) ?? 'http://localhost:4000';
 
-  const THEMES = [
-    { value: 'dark',    label: '◼ Donker' },
-    { value: 'warm',    label: '🟠 Warm' },
-    { value: 'cool',    label: '🔵 Koel' },
-    { value: 'minimal', label: '⬜ Minimaal' },
-  ] as const;
-  let selectedTheme: string = 'dark';
-  let bgUploading = false;
-  let videoUploading = false;
-
-  const FONTS = [
-    { value: 'default',   label: 'Aa Standaard' },
-    { value: 'serif',     label: 'Aa Serif' },
-    { value: 'rounded',   label: 'Aa Rond' },
-    { value: 'condensed', label: 'Aa Smal' },
-    { value: 'mono',      label: 'Aa Mono' },
-    { value: 'display',   label: 'Aa Display' },
-  ] as const;
-  let selectedFont: string = 'default';
-
-  $: previewUrl = buildPreviewUrl(DISPLAY_URL, tenant?.public_token, selectedTheme, selectedFont);
-  $: bgUrl = $auth.tenant?.bg_image_path ? `${API_URL}/uploads/${$auth.tenant.bg_image_path}-400w.webp` : null;
-  $: videoSet = !!$auth.tenant?.bg_video_path;
-
-  async function uploadBackground(e: Event) {
-    const file = (e.target as HTMLInputElement).files?.[0];
-    if (!file) return;
-    bgUploading = true;
-    try {
-      const { path } = await api.uploadImage(file);
-      await api.patch<unknown>('/me/background', { bg_image_path: path });
-      auth.update(s => s.tenant ? { ...s, tenant: { ...s.tenant, bg_image_path: path } } : s);
-    } catch (ex: unknown) {
-      alert((ex as Error).message);
-    } finally {
-      bgUploading = false;
-      (e.target as HTMLInputElement).value = '';
-    }
-  }
-
-  async function removeBackground() {
-    if (!confirm('Achtergrond verwijderen?')) return;
-    await api.patch<unknown>('/me/background', { bg_image_path: null });
-    auth.update(s => s.tenant ? { ...s, tenant: { ...s.tenant, bg_image_path: null } } : s);
-  }
-
-  async function uploadVideo(e: Event) {
-    const file = (e.target as HTMLInputElement).files?.[0];
-    if (!file) return;
-    videoUploading = true;
-    try {
-      const { path } = await api.uploadVideo(file);
-      await api.patch<unknown>('/me/video', { bg_video_path: path });
-      auth.update(s => s.tenant ? { ...s, tenant: { ...s.tenant, bg_video_path: path } } : s);
-    } catch (ex: unknown) {
-      alert((ex as Error).message);
-    } finally {
-      videoUploading = false;
-      (e.target as HTMLInputElement).value = '';
-    }
-  }
-
-  async function removeVideo() {
-    if (!confirm('Video verwijderen?')) return;
-    await api.patch<unknown>('/me/video', { bg_video_path: null });
-    auth.update(s => s.tenant ? { ...s, tenant: { ...s.tenant, bg_video_path: null } } : s);
-  }
-
-  let tickerDraft = '';
-  let tickerSaving = false;
-
-  async function saveTicker() {
-    tickerSaving = true;
-    try {
-      await api.patch<unknown>('/me/ticker', { ticker_text: tickerDraft.trim() || null });
-      auth.update(s => s.tenant ? { ...s, tenant: { ...s.tenant, ticker_text: tickerDraft.trim() || null } } : s);
-    } catch (ex: unknown) {
-      alert((ex as Error).message);
-    } finally {
-      tickerSaving = false;
-    }
-  }
+  // Achtergrond, video, ticker, thema en lettertype worden per scherm beheerd
+  // op /dashboard/screens. Het dashboard gaat over de menu-inhoud.
+  $: previewUrl = tenant ? `${DISPLAY_URL}/?token=${tenant.public_token}` : '#';
 
   type CatWithItems = Category & { items: MenuItem[] };
 
@@ -110,10 +31,7 @@
   let libraryLoading = false;
   let selectedLibraryFile = '';
 
-  onMount(() => {
-    tickerDraft = $auth.tenant?.ticker_text ?? '';
-    return load();
-  });
+  onMount(() => load());
 
   async function load() {
     busy = true;
@@ -309,36 +227,6 @@
     <h1>{tenant?.name ?? 'Signage'}</h1>
     <div class="header-actions">
       {#if tenant}
-        <label class="btn-ghost bg-btn" title={bgUploading ? 'Uploaden…' : 'Achtergrond instellen'}>
-          {#if bgUploading}
-            ⏳
-          {:else if bgUrl}
-            🖼 Achtergrond
-          {:else}
-            🖼 Achtergrond
-          {/if}
-          <input type="file" accept="image/jpeg,image/png,image/webp,image/bmp" on:change={uploadBackground} disabled={bgUploading} hidden />
-        </label>
-        {#if bgUrl}
-          <button class="btn-ghost" on:click={removeBackground} title="Achtergrond verwijderen">✕ Achtergrond</button>
-        {/if}
-        <label class="btn-ghost bg-btn" title={videoUploading ? 'Uploaden…' : 'Video achtergrond instellen'}>
-          {videoUploading ? '⏳' : videoSet ? '🎬 Video ✓' : '🎬 Video'}
-          <input type="file" accept="video/mp4,video/webm" on:change={uploadVideo} disabled={videoUploading} hidden />
-        </label>
-        {#if videoSet}
-          <button class="btn-ghost" on:click={removeVideo} title="Video verwijderen">✕ Video</button>
-        {/if}
-        <select bind:value={selectedTheme} class="theme-select" title="Thema kiezen">
-          {#each THEMES as t}
-            <option value={t.value}>{t.label}</option>
-          {/each}
-        </select>
-        <select bind:value={selectedFont} class="theme-select" title="Lettertype kiezen">
-          {#each FONTS as f}
-            <option value={f.value}>{f.label}</option>
-          {/each}
-        </select>
         <a href={previewUrl} target="_blank" class="btn-ghost">👁 Preview</a>
         <a href="/dashboard/screens" class="btn-ghost">🖥 Schermen</a>
       {/if}
@@ -353,21 +241,6 @@
   {:else}
     <div class="toolbar">
       <button class="btn-add" on:click={addCat}>+ Categorie</button>
-    </div>
-
-    <div class="ticker-bar">
-      <span class="ticker-label">📢</span>
-      <input
-        class="ticker-input"
-        type="text"
-        bind:value={tickerDraft}
-        placeholder="Ticker tekst voor het scherm (leeg = geen ticker)"
-        maxlength="200"
-        on:keydown={(e) => e.key === 'Enter' && saveTicker()}
-      />
-      <button class="ticker-save" on:click={saveTicker} disabled={tickerSaving}>
-        {tickerSaving ? '…' : 'OK'}
-      </button>
     </div>
 
     <div
@@ -516,13 +389,6 @@
     text-decoration: none;
   }
   .btn-ghost:hover { border-color: #6366f1; color: #6366f1; }
-  .theme-select {
-    background: #0f172a; border: 1px solid #334155; color: #94a3b8;
-    border-radius: 6px; padding: .35rem .6rem; font-size: .8rem; cursor: pointer;
-  }
-  .theme-select:focus { outline: 2px solid #6366f1; }
-  .bg-btn { cursor: pointer; }
-  .bg-btn:hover { border-color: #6366f1; color: #6366f1; }
 
   .status { text-align: center; color: #64748b; padding: 3rem 1rem; }
   .err { color: #f87171; }
@@ -531,22 +397,6 @@
     background: #6366f1; color: #fff; border: none; border-radius: 8px;
     padding: .625rem 1.25rem; font-size: .9rem; cursor: pointer;
   }
-  .ticker-bar {
-    display: flex; align-items: center; gap: .5rem;
-    padding: .5rem 1rem; border-bottom: 1px solid #1e293b;
-  }
-  .ticker-label { font-size: 1rem; flex-shrink: 0; }
-  .ticker-input {
-    flex: 1; background: #0f172a; border: 1px solid #334155; color: #f1f5f9;
-    border-radius: 6px; padding: .5rem .75rem; font-size: .85rem;
-  }
-  .ticker-input:focus { outline: 2px solid #6366f1; border-color: transparent; }
-  .ticker-save {
-    background: #334155; color: #cbd5e1; border: none; border-radius: 6px;
-    padding: .5rem .875rem; font-size: .85rem; cursor: pointer; flex-shrink: 0;
-  }
-  .ticker-save:hover { background: #6366f1; color: #fff; }
-  .ticker-save:disabled { opacity: .5; }
 
   .cats { display: flex; flex-direction: column; gap: .75rem; padding: .5rem 1rem; }
 
