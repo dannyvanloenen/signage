@@ -50,6 +50,8 @@ export type CreateItemInput = {
 export const api = {
   magicLink: (email: string) =>
     req<{ message: string }>('/auth/magic-link', { method: 'POST', body: JSON.stringify({ email }) }),
+  signup: (email: string, business_name: string) =>
+    req<{ message: string }>('/auth/signup', { method: 'POST', body: JSON.stringify({ email, business_name }) }),
   verifyToken: (token: string) =>
     req<{ token: string }>(`/auth/verify/${token}`),
   me: () =>

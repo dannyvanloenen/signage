@@ -5,7 +5,7 @@
   import { auth } from '$lib/stores';
   import { api } from '$lib/api';
 
-  const PUBLIC = ['/login', '/verify'];
+  const PUBLIC = ['/login', '/verify', '/register'];
 
   onMount(async () => {
     const token = localStorage.getItem('jwt');

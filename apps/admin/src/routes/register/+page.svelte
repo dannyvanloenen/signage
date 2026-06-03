@@ -1,6 +1,7 @@
 <script lang="ts">
   import { api } from '$lib/api';
 
+  let businessName = '';
   let email = '';
   let sent = false;
   let error = '';
@@ -10,7 +11,7 @@
     error = '';
     loading = true;
     try {
-      await api.magicLink(email);
+      await api.signup(email, businessName);
       sent = true;
     } catch (e: unknown) {
       error = (e as Error).message;
@@ -22,12 +23,22 @@
 
 <main>
   <div class="card">
-    <h1>Inloggen</h1>
+    <h1>Account aanmaken</h1>
 
     {#if sent}
-      <p class="success">Check je e-mail voor de inloglink.</p>
+      <p class="success">Je account is aangemaakt! Check je e-mail voor de inloglink om te starten.</p>
     {:else}
+      <p class="sub">Maak gratis een menubord voor je zaak. Geen creditcard nodig.</p>
       <form on:submit|preventDefault={submit}>
+        <label for="business">Naam van je zaak</label>
+        <input
+          id="business"
+          type="text"
+          bind:value={businessName}
+          placeholder="Friet Palace"
+          autocomplete="organization"
+          required
+        />
         <label for="email">E-mailadres</label>
         <input
           id="email"
@@ -38,11 +49,11 @@
           required
         />
         {#if error}<p class="error">{error}</p>{/if}
-        <button type="submit" disabled={loading || !email}>
-          {loading ? 'Verzenden…' : 'Stuur inloglink'}
+        <button type="submit" disabled={loading || !email || businessName.trim().length < 2}>
+          {loading ? 'Bezig…' : 'Gratis starten'}
         </button>
       </form>
-      <p class="alt">Nog geen account? <a href="/register">Maak er gratis een aan</a></p>
+      <p class="alt">Al een account? <a href="/login">Inloggen</a></p>
     {/if}
   </div>
 </main>
@@ -64,7 +75,8 @@
     max-width: 360px;
     box-shadow: 0 4px 24px rgba(0,0,0,.4);
   }
-  h1 { color: #f1f5f9; font-size: 1.5rem; margin: 0 0 1.5rem; }
+  h1 { color: #f1f5f9; font-size: 1.5rem; margin: 0 0 .5rem; }
+  .sub { color: #94a3b8; font-size: .9rem; margin: 0 0 1.5rem; line-height: 1.4; }
   label { display: block; color: #94a3b8; font-size: .875rem; margin-bottom: .4rem; }
   input {
     width: 100%; box-sizing: border-box;

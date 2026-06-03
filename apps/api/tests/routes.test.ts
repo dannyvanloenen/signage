@@ -1,12 +1,17 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { eq, and } from 'drizzle-orm';
 import { buildApp } from '../src/app';
 import { db } from '../src/db/index';
 import { tenants, users, categories, screens } from '../src/db/schema';
 
+// E-mail mocken zodat de tests niet het netwerk op gaan (geen Ethereal-call).
+vi.mock('../src/lib/email', () => ({ sendMagicLink: async () => {} }));
+
 const TEST_CAT = '__regressietest_cat__';
 const TEST_SCREEN = '__regressietest_screen__';
+const SIGNUP_EMAIL = 'regressietest-signup@example.com';
+const SIGNUP_BUSINESS = '__Regressie Zaak__';
 
 let app: FastifyInstance;
 let publicToken: string;
@@ -36,6 +41,10 @@ afterAll(async () => {
   // Ruim test-categorieën en -schermen op en sluit de DB-connectie netjes.
   await db.delete(categories).where(and(eq(categories.tenant_id, tenantId), eq(categories.name, TEST_CAT))).catch(() => {});
   await db.delete(screens).where(and(eq(screens.tenant_id, tenantId), eq(screens.name, TEST_SCREEN))).catch(() => {});
+  // Signup-test opruimen (tenant-delete cascadeert schermen; daarna de user).
+  const [su] = await db.select().from(users).where(eq(users.email, SIGNUP_EMAIL)).catch(() => []);
+  if (su?.tenant_id) await db.delete(tenants).where(eq(tenants.id, su.tenant_id)).catch(() => {});
+  await db.delete(users).where(eq(users.email, SIGNUP_EMAIL)).catch(() => {});
   await app.close();
   await (db.$client as unknown as { end: (o?: unknown) => Promise<void> }).end({ timeout: 5 }).catch(() => {});
 });
@@ -204,6 +213,39 @@ describe('API — plan & limieten', () => {
     }
     expect(hit403).toBe(true);
     for (const id of created) await app.inject({ method: 'DELETE', url: `/screens/${id}`, headers: auth() });
+  });
+});
+
+describe('API — self-service signup', () => {
+  it('POST /auth/signup met ongeldige body geeft 400', async () => {
+    const res = await app.inject({ method: 'POST', url: '/auth/signup', payload: { email: 'geenmail', business_name: 'x' } });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('POST /auth/signup maakt tenant (free) + owner + Hoofdscherm aan', async () => {
+    const res = await app.inject({ method: 'POST', url: '/auth/signup', payload: { email: SIGNUP_EMAIL, business_name: SIGNUP_BUSINESS } });
+    expect(res.statusCode).toBe(201);
+    expect(res.json().message).toBeTruthy();
+
+    const [u] = await db.select().from(users).where(eq(users.email, SIGNUP_EMAIL));
+    expect(u?.role).toBe('owner');
+    expect(u?.tenant_id).toBeTruthy();
+
+    const [t] = await db.select().from(tenants).where(eq(tenants.id, u!.tenant_id!));
+    expect(t.name).toBe(SIGNUP_BUSINESS);
+    expect(t.plan).toBe('free');
+
+    const scr = await db.select().from(screens).where(eq(screens.tenant_id, u!.tenant_id!));
+    expect(scr.length).toBe(1);
+    expect(scr[0].public_token).toBe(t.public_token);
+  });
+
+  it('POST /auth/signup met bestaand e-mail maakt GEEN tweede tenant', async () => {
+    const before = (await db.select({ id: tenants.id }).from(tenants)).length;
+    const res = await app.inject({ method: 'POST', url: '/auth/signup', payload: { email: SIGNUP_EMAIL, business_name: 'Andere Zaak' } });
+    expect(res.statusCode).toBe(200);
+    const after = (await db.select({ id: tenants.id }).from(tenants)).length;
+    expect(after).toBe(before);
   });
 });
 

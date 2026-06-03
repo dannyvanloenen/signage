@@ -77,6 +77,17 @@ describe('admin api-client — categorie-endpoints', () => {
   });
 });
 
+describe('admin api-client — auth', () => {
+  it('signup POST /auth/signup met email + business_name', async () => {
+    fetchMock.mockResolvedValue(res({ message: 'ok' }));
+    await api.signup('nieuw@zaak.nl', 'Friet Palace');
+    const [url, init] = last();
+    expect(url).toBe(`${API_URL}/auth/signup`);
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body as string)).toEqual({ email: 'nieuw@zaak.nl', business_name: 'Friet Palace' });
+  });
+});
+
 describe('admin api-client — schermen', () => {
   it('createScreen POST /screens met {name}', async () => {
     fetchMock.mockResolvedValue(res({ id: 's1' }));
