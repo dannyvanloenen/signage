@@ -77,6 +77,32 @@ describe('admin api-client — categorie-endpoints', () => {
   });
 });
 
+describe('admin api-client — schermen', () => {
+  it('createScreen POST /screens met {name}', async () => {
+    fetchMock.mockResolvedValue(res({ id: 's1' }));
+    await api.createScreen('Balie');
+    const [url, init] = last();
+    expect(url).toBe(`${API_URL}/screens`);
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body as string)).toEqual({ name: 'Balie' });
+  });
+
+  it('updateScreen PUT /screens/:id met selectie + thema', async () => {
+    fetchMock.mockResolvedValue(res({ id: 's1' }));
+    await api.updateScreen('s1', { category_ids: ['a', 'b'], theme: 'cool' });
+    const [url, init] = last();
+    expect(url).toBe(`${API_URL}/screens/s1`);
+    expect(init.method).toBe('PUT');
+    expect(JSON.parse(init.body as string)).toEqual({ category_ids: ['a', 'b'], theme: 'cool' });
+  });
+
+  it('deleteScreen DELETE /screens/:id → undefined bij 204', async () => {
+    fetchMock.mockResolvedValue(res(undefined, 204));
+    expect(await api.deleteScreen('s1')).toBeUndefined();
+    expect(last()[1].method).toBe('DELETE');
+  });
+});
+
 describe('admin api-client — items & library', () => {
   it('toggleAvailability PATCH met is_available', async () => {
     fetchMock.mockResolvedValue(res({ id: 'i1', is_available: false }));

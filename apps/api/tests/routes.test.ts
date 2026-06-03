@@ -3,14 +3,16 @@ import type { FastifyInstance } from 'fastify';
 import { eq, and } from 'drizzle-orm';
 import { buildApp } from '../src/app';
 import { db } from '../src/db/index';
-import { tenants, users, categories } from '../src/db/schema';
+import { tenants, users, categories, screens } from '../src/db/schema';
 
 const TEST_CAT = '__regressietest_cat__';
+const TEST_SCREEN = '__regressietest_screen__';
 
 let app: FastifyInstance;
 let publicToken: string;
 let tenantId: string;
 let jwtToken: string;
+let catId: string | undefined;
 
 beforeAll(async () => {
   app = await buildApp({ logger: false });
@@ -25,11 +27,15 @@ beforeAll(async () => {
   const [u] = await db.select().from(users).where(eq(users.tenant_id, tenantId)).limit(1);
   if (!u) throw new Error('Geen gebruiker voor de tenant gevonden.');
   jwtToken = app.jwt.sign({ sub: u.id, tenantId, role: u.role }, { expiresIn: '1h' });
+
+  const [c] = await db.select().from(categories).where(eq(categories.tenant_id, tenantId)).limit(1);
+  catId = c?.id;
 });
 
 afterAll(async () => {
-  // Ruim eventuele test-categorieën op en sluit de DB-connectie netjes.
+  // Ruim test-categorieën en -schermen op en sluit de DB-connectie netjes.
   await db.delete(categories).where(and(eq(categories.tenant_id, tenantId), eq(categories.name, TEST_CAT))).catch(() => {});
+  await db.delete(screens).where(and(eq(screens.tenant_id, tenantId), eq(screens.name, TEST_SCREEN))).catch(() => {});
   await app.close();
   await (db.$client as unknown as { end: (o?: unknown) => Promise<void> }).end({ timeout: 5 }).catch(() => {});
 });
@@ -102,6 +108,74 @@ describe('API — categorie-validatie & CRUD', () => {
 
     const del = await app.inject({ method: 'DELETE', url: `/categories/${cat.id}`, headers: auth() });
     expect(del.statusCode).toBe(204);
+  });
+});
+
+describe('API — schermen (multi-screen)', () => {
+  let screenId: string;
+  let screenToken: string;
+
+  it('GET /screens zonder token geeft 401', async () => {
+    const res = await app.inject({ method: 'GET', url: '/screens' });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('GET /screens met token geeft minstens het Hoofdscherm', async () => {
+    const res = await app.inject({ method: 'GET', url: '/screens', headers: auth() });
+    expect(res.statusCode).toBe(200);
+    const arr = res.json();
+    expect(Array.isArray(arr)).toBe(true);
+    expect(arr.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('POST /screens maakt een scherm met token (64 hex) en defaults', async () => {
+    const res = await app.inject({ method: 'POST', url: '/screens', headers: auth(), payload: { name: TEST_SCREEN } });
+    expect(res.statusCode).toBe(201);
+    const s = res.json();
+    expect(s.public_token).toMatch(/^[0-9a-f]{64}$/);
+    expect(s.theme).toBe('dark');
+    expect(s.layout).toBe('auto');
+    expect(s.font).toBe('default');
+    expect(s.category_ids).toBeNull();
+    screenId = s.id;
+    screenToken = s.public_token;
+  });
+
+  it('PUT /screens/:id zet categorie-selectie + thema', async () => {
+    expect(catId).toBeTruthy();
+    const res = await app.inject({ method: 'PUT', url: `/screens/${screenId}`, headers: auth(), payload: { category_ids: [catId], theme: 'cool', layout: 'grid' } });
+    expect(res.statusCode).toBe(200);
+    const s = res.json();
+    expect(s.theme).toBe('cool');
+    expect(s.category_ids).toEqual([catId]);
+  });
+
+  it('GET /display/:token toont de scherm-selectie en -config', async () => {
+    const res = await app.inject({ method: 'GET', url: `/display/${screenToken}` });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.tenant.theme).toBe('cool');
+    expect(body.tenant.layout).toBe('grid');
+    expect(body.categories.length).toBe(1);
+    expect(body.categories[0].id).toBe(catId);
+  });
+
+  it('PUT /screens/:id met ongeldig thema geeft 400', async () => {
+    const res = await app.inject({ method: 'PUT', url: `/screens/${screenId}`, headers: auth(), payload: { theme: 'paars' } });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('DELETE /screens/:id verwijdert het testscherm (204)', async () => {
+    const res = await app.inject({ method: 'DELETE', url: `/screens/${screenId}`, headers: auth() });
+    expect(res.statusCode).toBe(204);
+  });
+
+  it('DELETE van het laatste scherm wordt geweigerd (400)', async () => {
+    const list = await app.inject({ method: 'GET', url: '/screens', headers: auth() });
+    const arr = list.json();
+    expect(arr.length).toBe(1); // alleen het Hoofdscherm resteert
+    const res = await app.inject({ method: 'DELETE', url: `/screens/${arr[0].id}`, headers: auth() });
+    expect(res.statusCode).toBe(400);
   });
 });
 
