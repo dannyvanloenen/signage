@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: signage
+          POSTGRES_PASSWORD: signage
+          POSTGRES_DB: signage
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U signage"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://signage:signage@localhost:5432/signage
+      REDIS_URL: redis://localhost:6379
+      MAGIC_LINK_SECRET: ci-test-secret-0123456789
+      BASE_URL: http://localhost:3000
+      ADMIN_URL: http://localhost:3001
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Database migrate + seed + backfill
+        working-directory: apps/api
+        run: |
+          pnpm db:migrate
+          pnpm db:seed
+          pnpm tsx scripts/backfill-screens.ts
+
+      - name: Typecheck
+        run: pnpm -r typecheck
+
+      - name: Test
+        run: pnpm -r test

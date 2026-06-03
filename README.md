@@ -1,5 +1,7 @@
 # Signage — Digitaal menuboard SaaS
 
+[![CI](https://github.com/dannyvanloenen/signage/actions/workflows/ci.yml/badge.svg)](https://github.com/dannyvanloenen/signage/actions/workflows/ci.yml)
+
 Monorepo met drie apps:
 
 | App | Pad | Poort |
