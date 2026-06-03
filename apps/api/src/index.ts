@@ -3,7 +3,7 @@ import { Server as SocketServer } from 'socket.io';
 import { eq } from 'drizzle-orm';
 import { config } from './config.js';
 import { db } from './db/index.js';
-import { tenants } from './db/schema.js';
+import { screens } from './db/schema.js';
 import { subscriber } from './lib/redis.js';
 import { buildApp } from './app.js';
 
@@ -21,16 +21,16 @@ displayNs.on('connection', async (socket) => {
   const public_token = socket.handshake.query.public_token as string | undefined;
   if (!public_token) { socket.disconnect(); return; }
 
-  const [tenant] = await db
-    .select({ id: tenants.id })
-    .from(tenants)
-    .where(eq(tenants.public_token, public_token))
+  const [screen] = await db
+    .select({ tenantId: screens.tenant_id })
+    .from(screens)
+    .where(eq(screens.public_token, public_token))
     .limit(1);
 
-  if (!tenant) { socket.disconnect(); return; }
+  if (!screen) { socket.disconnect(); return; }
 
-  socket.join(`tenant:${tenant.id}`);
-  socket.emit('connected', { tenantId: tenant.id });
+  socket.join(`tenant:${screen.tenantId}`);
+  socket.emit('connected', { tenantId: screen.tenantId });
 });
 
 // ── Redis → Socket.io brug ─────────────────────────────────────────────────

@@ -15,6 +15,7 @@ import uploadsRoutes from './routes/uploads.js';
 import displayRoutes from './routes/display.js';
 import meRoutes from './routes/me.js';
 import libraryRoutes from './routes/library.js';
+import screensRoutes from './routes/screens.js';
 
 declare module '@fastify/jwt' {
   interface FastifyJWT {
@@ -52,6 +53,7 @@ export async function buildApp({ logger = true }: { logger?: boolean } = {}): Pr
   await app.register(displayRoutes, { prefix: '/display' });
   await app.register(meRoutes, { prefix: '/me' });
   await app.register(libraryRoutes, { prefix: '/library' });
+  await app.register(screensRoutes, { prefix: '/screens' });
 
   app.get('/health', async () => {
     await db.execute(sql`SELECT 1`);
