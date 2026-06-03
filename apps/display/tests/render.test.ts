@@ -51,8 +51,9 @@ beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
   document.body.className = '';
   document.documentElement.removeAttribute('data-theme');
+  document.documentElement.removeAttribute('data-font');
   document.documentElement.style.cssText = '';
-  setUrl(''); // reset eventuele ?layout-param tussen tests
+  setUrl(''); // reset eventuele URL-params tussen tests
 });
 
 const grid = () => document.querySelector('.board-grid') as HTMLElement;
@@ -126,6 +127,38 @@ describe('display render — header & ticker', () => {
     render(makeData({ tenant: { id: 't', name: '<script>x</script>', bg_image_url: null, bg_video_url: null, ticker_text: null } }));
     expect(document.querySelector('.board-title script')).toBeNull();
     expect(document.querySelector('.board-title')?.textContent).toContain('<script>');
+  });
+});
+
+describe('display render — per-scherm thema/layout/font', () => {
+  const root = () => document.documentElement;
+
+  it('past het scherm-thema en -font toe', () => {
+    render(makeData({ tenant: { id: 't', name: 'T', bg_image_url: null, bg_video_url: null, ticker_text: null, theme: 'warm', font: 'serif' } }));
+    expect(root().dataset.theme).toBe('warm');
+    expect(root().dataset.font).toBe('serif');
+  });
+
+  it('laat dark/default zonder data-attributen', () => {
+    render(makeData({ tenant: { id: 't', name: 'T', bg_image_url: null, bg_video_url: null, ticker_text: null, theme: 'dark', font: 'default' } }));
+    expect(root().dataset.theme).toBeUndefined();
+    expect(root().dataset.font).toBeUndefined();
+  });
+
+  it('URL-param overruled het scherm-thema', () => {
+    setUrl('?theme=cool');
+    render(makeData({ tenant: { id: 't', name: 'T', bg_image_url: null, bg_video_url: null, ticker_text: null, theme: 'warm' } }));
+    expect(root().dataset.theme).toBe('cool');
+  });
+
+  it('scherm-layout center forceert center zonder video', () => {
+    render(makeData({ tenant: { id: 't', name: 'T', bg_image_url: null, bg_video_url: null, ticker_text: null, layout: 'center' } }));
+    expect(grid().dataset.layout).toBe('center');
+  });
+
+  it('scherm-layout grid forceert grid ondanks video', () => {
+    render(makeData({ tenant: { id: 't', name: 'T', bg_image_url: null, bg_video_url: '/uploads/x.mp4', ticker_text: null, layout: 'grid' } }));
+    expect(grid().dataset.layout).toBe('grid');
   });
 });
 

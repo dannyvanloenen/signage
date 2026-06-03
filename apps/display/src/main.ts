@@ -7,12 +7,6 @@ const STORAGE_KEY = 'signage_display_cache';
 const PAGE_SIZE = 4;
 const PAGE_INTERVAL = 8000;
 
-const VALID_THEMES = ['dark', 'warm', 'cool', 'minimal'] as const;
-type Theme = typeof VALID_THEMES[number];
-
-const VALID_FONTS = ['default', 'serif', 'rounded', 'condensed', 'mono', 'display'] as const;
-type Font = typeof VALID_FONTS[number];
-
 let currentMenu: MenuData | null = null;
 let pageIndex = 0;
 let pageTimer: ReturnType<typeof setInterval> | undefined;
@@ -22,17 +16,8 @@ function getToken(): string | null {
   return new URLSearchParams(location.search).get('token');
 }
 
-function applyTheme(): void {
-  const raw = new URLSearchParams(location.search).get('theme') ?? 'dark';
-  const theme: Theme = (VALID_THEMES as readonly string[]).includes(raw) ? raw as Theme : 'dark';
-  if (theme !== 'dark') document.documentElement.dataset.theme = theme;
-}
-
-function applyFont(): void {
-  const raw = new URLSearchParams(location.search).get('font') ?? 'default';
-  const font: Font = (VALID_FONTS as readonly string[]).includes(raw) ? raw as Font : 'default';
-  if (font !== 'default') document.documentElement.dataset.font = font;
-}
+// Thema en lettertype worden in render() toegepast op basis van de scherm-
+// payload (met ?theme=/?font= als override).
 
 function activeCategories(data: MenuData) {
   return data.categories.filter(c => c.items.some(i => i.is_available));
@@ -107,8 +92,6 @@ function init(): void {
     renderError('Geen token opgegeven. Gebruik ?token=PUBLIC_TOKEN in de URL.');
     return;
   }
-  applyTheme();
-  applyFont();
   renderLoading();
   loadAndRender(token);
   connectDisplay(token, () => loadAndRender(token));

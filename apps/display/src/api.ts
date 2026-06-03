@@ -20,7 +20,17 @@ export type DisplayCategory = {
 };
 
 export type MenuData = {
-  tenant: { id: string; name: string; bg_image_url: string | null; bg_video_url: string | null; ticker_text: string | null };
+  tenant: {
+    id: string;
+    name: string;
+    bg_image_url: string | null;
+    bg_video_url: string | null;
+    ticker_text: string | null;
+    /** Per-scherm voorkeuren (optioneel; URL-params blijven override). */
+    theme?: string;
+    layout?: string;
+    font?: string;
+  };
   categories: DisplayCategory[];
 };
 

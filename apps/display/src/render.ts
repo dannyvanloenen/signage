@@ -39,14 +39,40 @@ function renderCategory(cat: MenuData['categories'][0]): string {
 
 type Layout = 'grid' | 'center';
 
+const VALID_THEMES = ['dark', 'warm', 'cool', 'minimal'];
+const VALID_FONTS = ['default', 'serif', 'rounded', 'condensed', 'mono', 'display'];
+
+function pick(urlValue: string | null, screenValue: string | undefined, valid: string[], fallback: string): string {
+  if (urlValue && valid.includes(urlValue)) return urlValue;
+  if (screenValue && valid.includes(screenValue)) return screenValue;
+  return fallback;
+}
+
 /**
- * Bepaalt de uitlijning. Expliciet via ?layout=grid|center|split,
+ * Past thema en lettertype toe op <html>. Volgorde: ?theme=/?font= in de URL
+ * wint, anders de per-scherm voorkeur uit de payload, anders de standaard.
+ */
+function applyChrome(data: MenuData): void {
+  const params = new URLSearchParams(location.search);
+  const root = document.documentElement;
+
+  const theme = pick(params.get('theme'), data.tenant.theme, VALID_THEMES, 'dark');
+  if (theme === 'dark') delete root.dataset.theme; else root.dataset.theme = theme;
+
+  const font = pick(params.get('font'), data.tenant.font, VALID_FONTS, 'default');
+  if (font === 'default') delete root.dataset.font; else root.dataset.font = font;
+}
+
+/**
+ * Bepaalt de uitlijning. ?layout=grid|center|split wint, dan de scherm-layout,
  * anders automatisch: 'center' (midden vrij) zodra er video draait.
  */
-function getLayout(hasVideo: boolean): Layout {
+function getLayout(hasVideo: boolean, screenLayout: string | undefined): Layout {
   const raw = new URLSearchParams(location.search).get('layout');
   if (raw === 'center' || raw === 'split') return 'center';
   if (raw === 'grid') return 'grid';
+  if (screenLayout === 'center') return 'center';
+  if (screenLayout === 'grid') return 'grid';
   return hasVideo ? 'center' : 'grid';
 }
 
@@ -93,8 +119,10 @@ export function render(data: MenuData, page = 0, totalPages = 1): void {
     document.body.classList.remove('has-video');
   }
 
+  applyChrome(data);
+
   const catBlocks = data.categories.map(renderCategory).filter(Boolean);
-  const layout = getLayout(!!data.tenant.bg_video_url);
+  const layout = getLayout(!!data.tenant.bg_video_url, data.tenant.layout);
 
   let gridInner: string;
   let gridAttrs: string;
