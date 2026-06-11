@@ -2,8 +2,14 @@ packages:
   - 'apps/*'
   - 'packages/*'
 
-# pnpm v10+ leest deze instelling hier (niet meer uit package.json):
-# sta de build-scripts toe die we vertrouwen (anders ontbreken native binaries).
+# Sta de build-scripts toe die we vertrouwen (anders ontbreken native binaries).
+# pnpm v11+ (lokaal) leest `allowBuilds`; pnpm v9 (VPS) leest `onlyBuiltDependencies`.
+# Beide blijven staan zodat het op beide omgevingen werkt.
+allowBuilds:
+  esbuild: true
+  sharp: true
+  svelte-preprocess: true
+
 onlyBuiltDependencies:
   - esbuild
   - sharp

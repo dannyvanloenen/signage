@@ -1,11 +1,15 @@
 node_modules/
 dist/
+build/
 .env
 *.env.local
 .svelte-kit/
 uploads/
 *.tsbuildinfo
 apps/*/.env
+
+# PM2 / runtime-logs in de root
+*.log
 
 # Gegenereerde test-rapporten
 apps/*/tests/REPORT.md
