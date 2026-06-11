@@ -4,7 +4,7 @@ import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq } from 'drizzle-orm';
 import { config } from '../src/config.js';
-import { tenants, users, magic_tokens, categories, menu_items } from '../src/db/schema.js';
+import { tenants, users, magic_tokens, categories, menu_items, screens } from '../src/db/schema.js';
 
 const EMAIL = process.env.SEED_EMAIL ?? 'demo@signage.local';
 
@@ -41,6 +41,21 @@ async function seed() {
       await db.update(users).set({ tenant_id: tenant.id }).where(eq(users.id, user.id));
     }
     console.log('  user already exists:', EMAIL);
+  }
+
+  // Standaardscherm (Hoofdscherm) — hergebruikt de tenant-token, net als de
+  // backfill en self-service signup. Idempotent: overslaan als er al een scherm is.
+  const existingScreen = await db.select({ id: screens.id }).from(screens).where(eq(screens.tenant_id, tenant.id)).limit(1);
+  if (existingScreen.length === 0) {
+    await db.insert(screens).values({
+      tenant_id: tenant.id,
+      name: 'Hoofdscherm',
+      public_token: tenant.public_token,
+      sort_order: 0,
+    });
+    console.log('  created default screen: Hoofdscherm');
+  } else {
+    console.log('  screen already exists, skipping');
   }
 
   // Categories + items
