@@ -31,12 +31,12 @@ export type User = { id: string; email: string; tenant_id: string | null; role: 
 
 export type Screen = {
   id: string; tenant_id: string; name: string; public_token: string;
-  theme: string; layout: string; font: string;
+  theme: string; layout: string; font: string; logo_scale: number;
   bg_image_path: string | null; bg_video_path: string | null;
   ticker_text: string | null; category_ids: string[] | null; sort_order: number;
 };
 export type ScreenUpdate = Partial<Pick<Screen,
-  'name' | 'theme' | 'layout' | 'font' | 'bg_image_path' | 'bg_video_path' | 'ticker_text' | 'category_ids'>>;
+  'name' | 'theme' | 'layout' | 'font' | 'logo_scale' | 'bg_image_path' | 'bg_video_path' | 'ticker_text' | 'category_ids'>>;
 
 export type PlanLimits = { screens: number; categories: number; items: number };
 export type PlanUsage = { screens: number; categories: number; items: number };

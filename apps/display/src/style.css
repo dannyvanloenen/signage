@@ -100,6 +100,17 @@ body.has-bg::after { opacity: 1; }
   opacity: .55;
 }
 
+/* Logo vóór de video: zodra er zowel een achtergrondafbeelding als een video
+   is, zakt de video naar de achterste laag en toont de afbeelding zich als
+   gecentreerd logo (transparante PNG) erbovenop — niet als full-cover backdrop. */
+body.has-video #bg-video { z-index: -2; }
+body.has-video.has-bg::before {
+  z-index: -1;
+  background-size: calc(min(46vh, 40vw) * var(--logo-scale, 1)) auto;
+  background-position: center 44%;
+}
+body.has-video.has-bg::after { opacity: 0; }
+
 #app {
   display: flex;
   flex-direction: column;

@@ -1,0 +1,1 @@
+ALTER TABLE "screens" ADD COLUMN "logo_scale" integer DEFAULT 100 NOT NULL;

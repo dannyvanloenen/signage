@@ -82,9 +82,11 @@ export function render(data: MenuData, page = 0, totalPages = 1): void {
   // Background image
   if (data.tenant.bg_image_url) {
     document.documentElement.style.setProperty('--bg-image', `url("${API_URL}${data.tenant.bg_image_url}")`);
+    document.documentElement.style.setProperty('--logo-scale', String((data.tenant.logo_scale ?? 100) / 100));
     document.body.classList.add('has-bg');
   } else {
     document.documentElement.style.removeProperty('--bg-image');
+    document.documentElement.style.removeProperty('--logo-scale');
     document.body.classList.remove('has-bg');
   }
 

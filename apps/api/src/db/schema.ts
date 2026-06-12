@@ -23,6 +23,7 @@ export const screens = pgTable('screens', {
   theme: varchar('theme', { length: 20 }).notNull().default('dark'),
   layout: varchar('layout', { length: 20 }).notNull().default('auto'),
   font: varchar('font', { length: 20 }).notNull().default('default'),
+  logo_scale: integer('logo_scale').notNull().default(100),
   bg_image_path: varchar('bg_image_path', { length: 500 }),
   bg_video_path: varchar('bg_video_path', { length: 500 }),
   ticker_text: text('ticker_text'),

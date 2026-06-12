@@ -173,6 +173,17 @@
             {/if}
           </div>
 
+          {#if s.bg_image_path && s.bg_video_path}
+            <label class="logo-scale">
+              <span>Logo-grootte (op video): {s.logo_scale ?? 100}%</span>
+              <input
+                type="range" min="20" max="200" step="5"
+                value={s.logo_scale ?? 100}
+                on:change={(e) => patch(s, { logo_scale: +e.currentTarget.value })}
+              />
+            </label>
+          {/if}
+
           <div class="cats">
             <span class="cats-lbl">Categorieën {s.category_ids === null ? '(alle)' : `(${s.category_ids.length})`}</span>
             <div class="chips">
@@ -222,6 +233,8 @@
   .upl:hover { border-color: #4f46e5; }
   .rm { background: none; border: 1px solid #334155; color: #94a3b8; border-radius: 5px; padding: .3rem .5rem; cursor: pointer; font-size: .75rem; }
   .rm:hover { color: #f87171; border-color: #f87171; }
+  .logo-scale { gap: .35rem; }
+  .logo-scale input[type="range"] { width: 100%; accent-color: #4f46e5; }
   .cats-lbl { font-size: .72rem; color: #94a3b8; }
   .chips { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .35rem; }
   .chip { flex-direction: row; align-items: center; gap: .3rem; background: #0f172a; border: 1px solid #334155; padding: .25rem .5rem; border-radius: 999px; font-size: .78rem; color: #cbd5e1; cursor: pointer; }

@@ -17,6 +17,7 @@ const updateBody = z.object({
   theme: z.enum(['dark', 'warm', 'cool', 'minimal']).optional(),
   layout: z.enum(['auto', 'grid', 'center']).optional(),
   font: z.enum(['default', 'serif', 'rounded', 'condensed', 'mono', 'display']).optional(),
+  logo_scale: z.number().int().min(20).max(200).optional(),
   bg_image_path: z.string().max(500).nullable().optional(),
   bg_video_path: z.string().max(500).nullable().optional(),
   ticker_text: z.string().max(500).nullable().optional(),

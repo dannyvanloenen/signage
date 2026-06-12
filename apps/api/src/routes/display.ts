@@ -46,6 +46,7 @@ const displayRoutes: FastifyPluginAsync = async (app) => {
         theme: screen.theme,
         layout: screen.layout,
         font: screen.font,
+        logo_scale: screen.logo_scale,
       },
       categories: orderedCats.map((c) => ({
         id: c.id,

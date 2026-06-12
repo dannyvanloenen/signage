@@ -30,6 +30,8 @@ export type MenuData = {
     theme?: string;
     layout?: string;
     font?: string;
+    /** Logo-grootte in procenten (default 100); schaalt de logo-overlay op video. */
+    logo_scale?: number;
   };
   categories: DisplayCategory[];
 };
