@@ -106,7 +106,7 @@ body.has-bg::after { opacity: 1; }
 body.has-video #bg-video { z-index: -2; }
 body.has-video.has-bg::before {
   z-index: -1;
-  background-size: calc(min(46vh, 40vw) * var(--logo-scale, 1)) auto;
+  background-size: var(--logo-size, 40vmin) auto;
   background-position: center 44%;
 }
 body.has-video.has-bg::after { opacity: 0; }

@@ -82,11 +82,15 @@ export function render(data: MenuData, page = 0, totalPages = 1): void {
   // Background image
   if (data.tenant.bg_image_url) {
     document.documentElement.style.setProperty('--bg-image', `url("${API_URL}${data.tenant.bg_image_url}")`);
-    document.documentElement.style.setProperty('--logo-scale', String((data.tenant.logo_scale ?? 100) / 100));
+    // Logo-grootte in JS uitrekenen tot een kant-en-klare px-waarde, zodat we
+    // geen calc(min()) in CSS nodig hebben (niet ondersteund op oudere TV-browsers).
+    const scale = (data.tenant.logo_scale ?? 100) / 100;
+    const base = Math.min(window.innerHeight * 0.46, window.innerWidth * 0.40);
+    document.documentElement.style.setProperty('--logo-size', `${Math.round(base * scale)}px`);
     document.body.classList.add('has-bg');
   } else {
     document.documentElement.style.removeProperty('--bg-image');
-    document.documentElement.style.removeProperty('--logo-scale');
+    document.documentElement.style.removeProperty('--logo-size');
     document.body.classList.remove('has-bg');
   }
 

@@ -95,6 +95,11 @@ function init(): void {
   renderLoading();
   loadAndRender(token);
   connectDisplay(token, () => loadAndRender(token));
+
+  // Logo-grootte (px) hangt af van de schermafmeting; herbereken bij resize.
+  window.addEventListener('resize', () => {
+    if (currentMenu) renderPage(currentMenu, pageIndex);
+  });
 }
 
 init();
