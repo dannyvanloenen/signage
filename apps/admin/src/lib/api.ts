@@ -56,6 +56,8 @@ export const api = {
     req<{ token: string }>(`/auth/verify/${token}`),
   me: () =>
     req<{ user: User; tenant: Tenant | null; limits: PlanLimits | null; usage: PlanUsage | null }>('/me'),
+  updateBusinessName: (name: string) =>
+    req<Tenant>('/me/tenant', { method: 'PUT', body: JSON.stringify({ name }) }),
 
   getCategories: () => req<Category[]>('/categories'),
   createCategory: (name: string) =>

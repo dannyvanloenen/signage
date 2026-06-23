@@ -220,11 +220,27 @@
 
   const fmt = (cents: number) => `€ ${(cents / 100).toFixed(2).replace('.', ',')}`;
   $: tenant = $auth.tenant;
+
+  async function renameTenant() {
+    if (!tenant) return;
+    const name = prompt('Naam van je zaak (shoptitel):', tenant.name);
+    if (!name?.trim() || name.trim() === tenant.name) return;
+    try {
+      const updated = await api.updateBusinessName(name.trim());
+      auth.update((a) => ({ ...a, tenant: updated }));
+    } catch (e: unknown) {
+      alert((e as Error).message);
+    }
+  }
 </script>
 
 <div class="shell">
   <header>
-    <h1>{tenant?.name ?? 'Signage'}</h1>
+    <h1>
+      {#if tenant}
+        <button class="title-edit" on:click={renameTenant} title="Shoptitel wijzigen">{tenant.name}</button>
+      {:else}Signage{/if}
+    </h1>
     <div class="header-actions">
       {#if tenant}
         <a href={previewUrl} target="_blank" class="btn-ghost">👁 Preview</a>
@@ -382,6 +398,11 @@
     border-bottom: 1px solid #334155;
   }
   h1 { margin: 0; font-size: 1.125rem; }
+  .title-edit {
+    font: inherit; color: inherit; background: none; border: none; cursor: pointer;
+    padding: .1rem .35rem; margin: -.1rem -.35rem; border-radius: 5px;
+  }
+  .title-edit:hover { background: rgba(255,255,255,.08); }
   .header-actions { display: flex; gap: .5rem; }
   .btn-ghost {
     background: none; border: 1px solid #334155; color: #94a3b8;
