@@ -76,6 +76,25 @@ function getLayout(hasVideo: boolean, screenLayout: string | undefined): Layout 
   return hasVideo ? 'center' : 'grid';
 }
 
+/**
+ * Auto-fit: verlaag de globale --fit (root-fontschaal) net zo lang tot geen
+ * enkele categorie-itemlijst meer wordt afgeknipt, zodat het hele menu past.
+ */
+function fitToScreen(): void {
+  const root = document.documentElement;
+  root.style.setProperty('--fit', '1');
+  const lists = Array.from(document.querySelectorAll<HTMLElement>('.items'));
+  if (lists.length === 0) return;
+  const overflowing = () => lists.some((el) => el.scrollHeight > el.clientHeight + 1);
+  let fit = 1;
+  let guard = 0;
+  while (overflowing() && fit > 0.45 && guard < 24) {
+    fit -= 0.04;
+    root.style.setProperty('--fit', fit.toFixed(2));
+    guard += 1;
+  }
+}
+
 export function render(data: MenuData, page = 0, totalPages = 1): void {
   const app = document.getElementById('app')!;
 
@@ -163,6 +182,8 @@ export function render(data: MenuData, page = 0, totalPages = 1): void {
       ${gridInner}
     </main>
     ${ticker}`;
+
+  fitToScreen();
 }
 
 export function renderError(message: string): void {

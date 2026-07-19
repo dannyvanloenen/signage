@@ -12,7 +12,8 @@
   --accent-dim: rgba(245,158,11,.12);
   --radius:     .5rem;
   --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  font-size: clamp(12px, 1.2vw, 16px);
+  /* --fit wordt door render() verlaagd tot het volledige menu past (auto-fit). */
+  font-size: calc(clamp(12px, 1.2vw, 16px) * var(--fit, 1));
 }
 
 /* ── Lettertypes (via ?font= in de URL) ── */

@@ -162,6 +162,25 @@ describe('display render — per-scherm thema/layout/font', () => {
   });
 });
 
+describe('display render — auto-fit', () => {
+  const fit = () => document.documentElement.style.getPropertyValue('--fit');
+
+  it('zet de fit-schaal bij elke render terug naar 1 (verse start)', () => {
+    // Simuleer een eerdere, verkleinde render.
+    document.documentElement.style.setProperty('--fit', '0.6');
+    render(makeData());
+    // fitToScreen() reset naar 1 en verlaagt alleen bij echte overflow;
+    // in de test (geen layout) blijft de schaal op 1 staan.
+    expect(fit()).toBe('1');
+  });
+
+  it('crasht niet zonder categorieën (geen .items-lijsten)', () => {
+    const leeg = cat('Leeg');
+    leeg.items[0].is_available = false;
+    expect(() => render(makeData({ categories: [leeg] }))).not.toThrow();
+  });
+});
+
 describe('display render — states', () => {
   it('toont de error-state', () => {
     renderError('Menu tijdelijk niet beschikbaar');

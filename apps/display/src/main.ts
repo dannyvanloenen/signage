@@ -4,7 +4,9 @@ import { connectDisplay } from './socket';
 import { render, renderError, renderLoading } from './render';
 
 const STORAGE_KEY = 'signage_display_cache';
-const PAGE_SIZE = 4;
+// Toon zoveel mogelijk categorieën op één scherm; render() schaalt de tekst
+// automatisch zodat alles past (auto-fit). Pas bij heel veel categorieën rouleren.
+const PAGE_SIZE = 12;
 const PAGE_INTERVAL = 8000;
 
 let currentMenu: MenuData | null = null;
@@ -74,15 +76,30 @@ async function loadAndRender(token: string): Promise<void> {
     showMenu(data);
   } catch (err) {
     console.error('[display] fetch failed', err);
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const cached = JSON.parse(raw) as MenuData;
+    const cached = readCache();
+    if (cached) {
       showMenu(cached);
       const dot = document.getElementById('connection-status');
       if (dot) dot.dataset.state = 'offline';
     } else {
       renderError('Menu tijdelijk niet beschikbaar');
     }
+  }
+}
+
+/**
+ * Leest de gecachte payload uit localStorage. Een corrupte of half-geschreven
+ * cache mag het scherm niet laten hangen: bij een parse-fout gooien we de
+ * ongeldige entry weg en vallen we terug op de error-state.
+ */
+function readCache(): MenuData | null {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as MenuData;
+  } catch {
+    localStorage.removeItem(STORAGE_KEY);
+    return null;
   }
 }
 
