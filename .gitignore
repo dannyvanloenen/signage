@@ -14,3 +14,8 @@ apps/*/.env
 # Gegenereerde test-rapporten
 apps/*/tests/REPORT.md
 coverage/
+
+# Lokale AI-tooling (ruflo / claude-flow) — niet meecommitten
+.claude/
+.claude-flow/
+.swarm/
