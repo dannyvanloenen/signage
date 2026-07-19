@@ -171,7 +171,7 @@ body.has-video.has-bg::after { opacity: 0; }
 /* Center-stage: smallere linker-/rechterkolom met een brede middenstrook,
    zodat het logo en de bewegende video-achtergrond goed zichtbaar blijven. */
 .board-grid[data-layout="center"] {
-  grid-template-columns: minmax(0, 1fr) minmax(30%, 1.5fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(38%, 2fr) minmax(0, 1fr);
   align-content: stretch;
 }
 .board-grid[data-layout="center"] .board-col:first-child { grid-column: 1; }
